@@ -1,0 +1,53 @@
+# Declare comments with '#'
+# [...] ... [/...] is Malange block.
+
+##### ---------- For-in rendering.
+
+[for x in a_list]
+
+<p>${x}</p>
+
+[/for]
+
+##### ---------- While rendering.
+
+[while x == true]
+
+<p>True!</p>
+
+[/while]
+
+##### ---------- If-elif-else rendering.
+
+[if status = 0]
+
+<p>Success!</p>
+
+[elif status = 1]
+
+<p>Fail!</p>
+
+[else]
+
+<p>Unknown!
+
+[/if]
+
+##### ---------- Switch-case-default rendering.
+
+[switch x]
+
+[case 1]
+
+...
+
+[case 2]
+
+...
+
+[case default]
+
+...
+
+[/switch]
+

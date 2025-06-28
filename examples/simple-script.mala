@@ -1,0 +1,71 @@
+# Declare comments with '#'
+# [...] ... [/...] is Malange block.
+
+##### ---------- Demonstrates reactive variables and event listening.
+
+[script]
+
+from malange.types import HTMLObject
+
+$text: str = ""
+$button_color: str = "red"
+
+def show_text(event: HTMLObject.event):
+		text = "Hello, my name is Malange!"
+		button_color = "green"
+
+[/script]
+
+<p>${text}</p>
+
+<button class="btn" @click={show_text(event)}>Click me!</button>
+
+<style>
+
+.btn {
+		color : ${button_color};
+};
+
+</style>
+
+##### ---------- Demonstrates binding mechanism and reactive functions.
+
+[script]
+
+$user_agree: bool
+
+react user_agree : process(user_agree)
+
+# Can be written like this:
+# $user_agree: bool :: func1(), func2(), func3()
+# react user_agree : func1(), func2() :: user_disagree : func3(), func4(), { ... }
+
+[/script]
+
+<div class="checkbox">
+		<input type="checkbox" $checked={user_agree}>
+		<p>I agree to the terms and conditions></p>
+</div>
+
+<style>
+
+.checkbox {
+		display: flex;
+		flex-direction: row;
+		justify-content: space-evenly;
+};
+
+</style>
+
+##### ---------- Demonstrating injecting modules.
+
+[script]
+
+from malange.injection import MyBackendAPI
+
+data = MyBackendAPI()
+
+[/script]
+
+<p>${data.account}</p>
+
