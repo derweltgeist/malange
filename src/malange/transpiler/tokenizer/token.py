@@ -36,6 +36,17 @@
 
 
 class MalangeToken:
+    '''For Malange tokens.'''
     def __init__(self, token: str, value: str):
         self.token: str = token
         self.value: str = value
+    def __call__(self) -> str:
+        return f"{self.token}({self._value})"
+
+class PyMalangeToken:
+    '''For Malange Python tokens.'''
+    def __init__(self, token: str, value: str):
+        self.token: str = token
+        self.value: str = value
+    def __call__(self) -> str:
+        return f"{self.token}({self._value})"
