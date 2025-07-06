@@ -1,6 +1,14 @@
 # Declare comments with <!-- .. --> for HTML, # for [script]
 # [...] ... [/...] is Malange block.
 
+##### ---------- Script
+
+[script src="./desk.mala"]
+
+print("Hello, world")
+
+[/script]
+
 ##### ---------- For-in rendering.
 
 [for x in a_list]
