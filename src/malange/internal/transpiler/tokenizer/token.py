@@ -70,7 +70,6 @@
 
 '''
 
-
 class MalangeToken:
     '''For Malange tokens.'''
     def __init__(self, token: str = None,
