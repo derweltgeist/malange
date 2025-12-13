@@ -13,12 +13,12 @@ from malange.utils import Reactive
 
 reactive = Reactive(root_object)
 
-text: str = reactive("")
-button_color: str = reactive("red")
+text         = reactive("")
+button_color = reactive("red")
 
 def show_text(event: HTMLObject.event):
-		text = "Hello, my name is Malange!"
-		button_color = "green"
+		text.assign("Hello, my name is Malange!")
+		button_color.assign("green")
 
 [/script]
 
