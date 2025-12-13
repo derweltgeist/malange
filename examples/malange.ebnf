@@ -8,42 +8,42 @@ malange_block          : malange_if | malange_script | malange_switch |
 
 malange_if             : malange_opening_if malange_if_block malange_elif*
 										     malange_else? malange_closing_if
-malange_opening_if     : '[' whitespace? 'if' expression whitespace? ']' 
+malange_opening_if     : '[' whitespace? 'if' expression whitespace? '/]' 
 malange_if_block       : malange_template
-malange_elif           : '[' whitespace? 'elif' expression whitespace? ']' malange_template
-malange_else           : '[' whitespace? 'else' whitespace? ']' malange_template
-malange_closing_if     : '[/' whitespace? 'if' whitespace? ']'
+malange_elif           : '[' whitespace? 'elif' expression whitespace? '/]' malange_template
+malange_else           : '[' whitespace? 'else' whitespace? '/]' malange_template
+malange_closing_if     : '[/' whitespace? 'if' whitespace? '/]'
 
 # SCRIPT
 
 malange_script         : malange_script_opening python_script malange_script_closing
 malange_script_opening : '[' whitespace? 'script'
-												 ('src' whitespace? '=' whitespace? src)? whitespace? ']'
-malange_script_closing : '[/' whitespace? 'script' whitespace? ']'
+												 ('src' whitespace? '=' whitespace? src)? whitespace? '/]'
+malange_script_closing : '[/' whitespace? 'script' whitespace? '/]'
 
 # SWITCH
 
 malange_switch         : malange_opening_switch malange_case+
 												 malange_default* malange_closing_switch
-malange_opening_switch : '[' whitespace? 'switch' expression whitespace? ']' 
-malange_case           : '[' whitespace? 'case' expression whitespace? ']'
-malange_default        : '[' whitespace? 'default' whitespace? ']' malange_template
-malange_closing_switch : '[/' whitespace? 'switch' whitespace? ']'
+malange_opening_switch : '[' whitespace? 'switch' expression whitespace? '/]' 
+malange_case           : '[' whitespace? 'case' expression whitespace? '/]'
+malange_default        : '[' whitespace? 'default' whitespace? '/]' malange_template
+malange_closing_switch : '[/' whitespace? 'switch' whitespace? '/]'
 
 # FOR
 
 malange_for            : malange_opening_for malange_for_block malange_closing_for
 malange_opening_for    : '[' whitespace? 'for' whitespace? item 'in'
-										     whitespace? sequence whitespace? ']' 
+										     whitespace? sequence whitespace? '/]' 
 malange_for_block      : malange_template
-malange_closing_for    : '[/' whitespace? 'for' whitespace? ']'
+malange_closing_for    : '[/' whitespace? 'for' whitespace? '/]'
 
 # WHILE
 
 malange_while          : malange_opening_while malange_while_block malange_closing_while
-malange_opening_while  : '[' whitespace? 'while' expression whitespace? ']' 
+malange_opening_while  : '[' whitespace? 'while' expression whitespace? '/]' 
 malange_while_block    : malange_template
-malange_closing_while  : '[/' whitespace? 'while' whitespace? ']'
+malange_closing_while  : '[/' whitespace? 'while' whitespace? '/]'
 
 # HTML
 

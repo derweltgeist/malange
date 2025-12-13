@@ -18,7 +18,7 @@
     - MALANGE_WRAP_CLOSE    }$ d
     - MALANGE_WRAP_EXPRE    ... d
 
-    - HTML_TAG_OPEN         <, </ d
+    - HTML_TAG_OPEN         < d
     - HTML_TAG_MID          </
     - HTML_TAG_CLOSE        > d
     - HTML_ELEM_KEYWORD     script, h1, etc. d
@@ -52,14 +52,11 @@ class MalangeTokenizer:
         global error
         error.registerfile(file, title)
 
-        self.__title:   str         = title
+        self.title:   str           = title
         self.__token:   list[Token] = []
         self.__pytoken: list[Token] = []
-        self.__style:   list[str]   = []
+        self.style:   list[str]     = []
         self.__script:  bool        = False
-        # self.__plain:   bool        = False
-        # self.__python:  bool        = False
-        # self.__comment: bool        = False
         self.__mode:    str         = "normal" # normal, python, plain, comment
         self.__lexer(file)
 
@@ -71,12 +68,10 @@ class MalangeTokenizer:
                 mode: str = Default: malange (print Malange Tokens),
                             can be python (Python tokens).
             exceptions:
-                internal.tokenizer = Raised when the mode args is
-                                     invalid (not python or malange).
+                internal.tokenizer.invalidmode = Raised when the mode args is
+                                                 invalid (not python or malange).
         '''
-
         global error
-
         if mode == "malange":
             for i, t in enumerate(self.__token):
                 print(f"{i} | {t()}")
@@ -84,48 +79,17 @@ class MalangeTokenizer:
             for i, t in enumerate(self.__pytoken):
                 print(f"{i} | {t()}")
         else:
-            ##### --------------------------------- #####
-            error({'component' : 'internal.tokenizer.invalidmode', 'message' : 
-             f'Invalid argument "mode" value {mode} when calling MalangeTokenizer.'})
+            error({'component' : 'internal.tokenizer.invalidmode', 'message' :
+                f'Invalid argument "mode" value {mode} when calling MalangeTokenizer.'})
 
-   def __lexer(self, file: str, script_exist: bool = False, sind: int = 0) -> None:
+    def __lexer(self, file: str) -> None:
         '''
             The lexer that tokenizes Malange blocks and HTML elements. It of course
             scans the file char by char. There are several variables and nested funcs,
-            those are there for a purpose. 
-            -   when processing special chars ([, [/, <, </) it will set inside_html_tag for < and </
-                to True (inside_mala_tag for [ and [/). It also set the type of the tag to type_html_tag
-                and type_mala_tag. type_html_tag can be "open" (< .. <) or "close" (</ ...).
-            -   Same with type_mala_tag. If an injection expression eg ${ ... } is encountered it will also
-                set inside_brac to True. The start_brac_ind is the index for ${ for grabbing expressions
-                from inside ${ ... } through slicing file.
-            -   Same for start_mala_ind for Malange blocks and start_html_ind for HTML elements for grabbing arguments.
-            -   about_to_process is used when processing '[' token. When processing '[', the
-                lexer will check the keyword. If the keyword is 'script' it will set about_to_process
-                and obtain the src arg of the block if it does exists to script_source and set
-                script_outsourced to True if the src exists. When processing ']' it will check
-                for variable inside_open_mala_block, if it is True the lexer knows the previous
-                token is '[' and thus will check for the src variables. After that the text for the script
-                is processed and added to self.__pytoken. Then, recursive lexing is initiated for the
-                rest of the text. 
-            -   script_exist is a variable that indicates that a [script] has been processed (there can't
-                be multiple [script]).
-            -   Same process for grabbing JS script and style script (CSS/SCSS/anything). For JS it will
-                be saved in the form of tokens. While for CSS/SCSS it will be saved to self.__style
-            -   When processing plain text record_ptext is set to True and plain text chars
-                are added to ptext. When a special token is found the record_ptext is False &
-                ptext is converted into Tokens and then set back to "". All of that are done by
-                cleanup_ptext() function.
-            -   When <!-- token is found, comment is enabled. If commenting is enabled the chars
-                will be skipped until --> is found (thus disabling comments).
-            -   process_arguments is a function to slice file string using index of [ or < and ]
-                or > to obtain arguments.
+            those are there for a purpose.
 
             parameters:
                 file:          str  = The file content string.
-                script_exist:  bool = Indicates whether script block has existed or not.
-                                      Optional. Default value False.
-                sind:
         '''
 
         ind = 0
@@ -145,29 +109,44 @@ class MalangeTokenizer:
             else:
                 pchar: Optional[str] = file[ind-1]
 
-            # ===================== Check for Malange Tags
+            # Check for Malange tags.
             if pchar != "\\" and char == "[" and self.__mode == "normal":
-                new_ind = self.__process_mala_tag(file[ind:], ind+1)
-                ind = new_ind
+                new_ind = self.__process_mala_tag(file[ind+1:], ind+2)
+                ind     = new_ind # Set the new index.
+            # Check for HTML tags.
+            elif pchar != "\\" and char == "<" and self.__mode == "normal":
+                new_ind: int = self.__process_html_tag(file[ind+1:], ind+2)
+                ind: int     = new_ind
+            # Check for Python.
+            elif self.__mode == "python":
+                pass
 
             ind += 1
     
     def __process_mala_tag(self, file: str, sind: int) -> int:
         '''
             Created to process malange tag tokens. The mechanism is like this:
-            - First it will begin by scanning whether the tag is closed or not.
-            - Second it will begin by scanning the keyword.
-            - Third it will scan arguments (only scanned if the tag is not closing tag)
-            - Fourth it will finish when ']' is discovered.
-            The process of finishing is like this:
-            - Begin by compiling the arguments into a dictionary.
-            - Then append the argument tokens (the final form)
-            - Then append the closing tag.
-            - Exit function.
+            - First it will begin by scanning whether the tag is close or not (L185).
+              if yes, variable close will be enabled.
+            - Second it will begin by scanning the keyword (L198). It is only done if
+              check_args is not enabled. After keyword scan, the check_args is enabled.
+            - Third it will scan arguments (L235, since check_args is enabled). First it will
+              record the starting index of the first char of the arguments. Second any
+              escaped closing bracket is recorded as part of the char without the backslash part.
+              If close is enabled, raise error since arguments are only for opening tags.
+            - Fourth it will finish when unescaped closing bracket is discovered.
 
             parameters:
-                file: The file string text.
-                start_ind: The index of the '/', NOT '['
+                file:      str = The file string text.
+                start_ind: int = The index of the '/', NOT '['
+            returns:
+                1:         int = The last primary index aka the primary index of unescaped ']'.
+            errors:
+                syntax.malange.multiplescripts       = Multiple script tags.
+                syntax.malange.invalidkeyword        = Invalid keyword usage or invalid keyword.
+                syntax.malange.emptykeyword          = Missing keyword.
+                syntax.malange.invalidattrspacing    = Attributes are not seperated from the keywords.
+                syntax.malange.invalidmalangeclosing = Invalid closing malange tags, must be: [/x]
         '''
 
         def peek(ind: int, string: str, file: str) -> bool:
@@ -195,68 +174,53 @@ class MalangeTokenizer:
                     return False
             except IndexError: return False
 
-        def process_arguments(arguments: str, args_ind: int) -> dict[str, str]:
-            '''
-            Process the arguments.
-            parameters:
-                arguments:    str  = The raw string arguments.
-            returns:
-                1:            bool = The processed dict.
-            '''
-            nonlocal sind
-            # First, break apart the arguments by using comma as a seperator.
-            split_args: list[str] = arguments.split(',')
-            # Analyze each split args.
-            for arg in split_args:
-                try:
-                    arg_name, arg_content = arg.split('=')
-                else IndexError:
-                    error({
-                        'component' : 'syntax.malange.invalidargs',
-                        'message'   : f'An argument is found invalid.',
-                        'index'     : sind+args_ind
-                    })
-                split_args[arg_name] = arg_content.strip()
-
-        ind:        int = 0       # Current index.
+        ind:        int = 0       # Current secondary (sliced file) index.
         check_args: bool = False  # Whether the argument recording is enabled or not.
         args:       str  = ""     # String variable for arguments.
         args_begin: bool = False  # Whether argument recording has begun or not.
         args_ind:   int  = 0      # The index of the first char of the arguments.
         close:      bool = False  # Whether the tag is closed or not.
         
-        processed_args: dict[str, str] = {} # Processed non-raw args.
-
         while ind < len(file):
-            # nchar = Next character, pchar = Previous character, char = Current character
+            # nchar = Next character, pchar = Previous character, char = Current character, nnchar = Double next char
             char = file[ind]
             try:
                 nchar: Optional[str] = file[ind+1]
             except IndexError:
                 nchar: Optional[str] = None
-            if ind - 1 < 0:
-                pchar: Optional[str] = None
-            else:
+            try:
                 pchar: Optional[str] = file[ind-1]
+            except IndexError:
+                pchar: Optional[str] = None
+            try:
+                nnchar: Optional[str] = file[ind+2]
+            except IndexError:
+                nnchar: Optional[str] = None
 
             # --- Check for [/
-            if char == "/":
-                self.__token.append(Token('MALANGE_BRAC_MID', '[/', sind+ind))
-                # Several keywords don't have a closing counterpart.
-                keyword_list: list[str] = ['script', 'for', 'while', 'if', 'match']
-                close = True
-            elif char != "/":
-                self.__token.append(Token('MALANGE_BRAC_OPEN', '[', sind+ind))
-                keyword_list: list[str] = ['script', 'for', 'while', 'if', 'match',
-                    'elif', 'else', 'case', 'default']
-            else: pass
-
+            keyword_list: list[str] = []
+            if ind == 0:
+                if char == "/":
+                    self.__token.append(Token('MALANGE_BRAC_MID', '[/', sind+ind-1))
+                    # Several keywords don't have a closing counterpart.
+                    keyword_list = ['script', 'for', 'while', 'if', 'match']
+                    close = True
+                else:
+                    self.__token.append(Token('MALANGE_BRAC_OPEN', '[', sind+ind-1))
+                    keyword_list = ['script', 'for', 'while', 'if', 'match',
+                        'elif', 'else', 'case', 'default']
             # --- Check for the keywords.
-            if check_args == False:
+            if not check_args and char != "/":
                 keyword_found: bool = False
                 valid_keyword: str  = ""
                 for keyword in keyword_list:
                     if peek(ind, keyword, file):
+                        if keyword.isspace() or keyword == "":
+                            error({
+                                'component' : 'syntax.malange.emptykeyword',
+                                'message'   : 'Keyword is required.',
+                                'index'     : sind+ind
+                            })
                         self.__token.append(Token('MALANGE_BLOCK_KEYWORD', keyword, sind+ind))
                         keyword_found = True
                         valid_keyword = keyword
@@ -271,33 +235,33 @@ class MalangeTokenizer:
                         })  
                     else:
                         self.__mode = "python"
+                # If no keyword is found.
                 if not keyword_found:
                     error({
                         'component' : 'syntax.malange.invalidkeyword',
-                        'message'   : f'Source "{script_source}" is not found or is invalid.',
+                        'message'   : f'The utilized keywords are invalid.',
                         'index'     : sind+ind
                     })
-                # Set check args as true.
-                if not close:
-                    check_args = True
+                check_args = True
+                # Skip the rest of the letters of the keywords straight to the beginning of the args.
+                ind += len(valid_keyword) - 1
 
             # --- If keyword checking is disabled via check_args == True, add the char to the arguments.
-            #     If ] is dicovered, exit tag processing.
-            elif check_args == True:
-                if char == ']': # If this char is discovered, end the recording of the Malange tag.
-                    # You can't insert attributes into a closing tag, so no.
-                    if close and check_args == True:
+            #     If unescaped ] is dicovered, exit tag processing.
+            #     If escaped ] is discovered, add only the ] to the arguments.
+            elif check_args and not close:
+                if pchar != '\\' and char == '/' and nchar == ']': # If this char is discovered, end the recording of the Malange tag.
+                    if args and args[0].isspace(): # The arguments must be seperated from the keyword.
+                        # Append the tokens.
+                        self.__token.append(Token('MALANGE_BLOCK_ATTR', args, sind+args_ind))
+                        self.__token.append(Token('MALANGE_BRAC_CLOSE', ']', sind+ind))
+                        break # Exit the loop.
+                    else:
                         error({
-                        'component' : 'syntax.malange.attronclosing',
-                        'message'   : f'Attribute is on a closing tag, which is invalid.',
+                        'component' : 'syntax.malange.invalidattrspacing',
+                        'message'   : f'Attribute and the keyword is not seperated by spaces.',
                         'index'     : sind+ind
                         })
-                    # If no error, continue.
-                    process_arguments(args) # Process the arguments from a str into a dict.
-                    # Append the tokens.
-                    self.__token.append(Token('MALANGE_BLOCK_ATTR', args, sind+args_ind)
-                    self.__token.append(Token('MALANGE_BRAC_CLOSE', ']', sind+ind)
-                    break # Exit the loop.
                 else: # Continue recording the arguments like normal.
                     # If this is the first time, args_begin will be disabled.
                     # Thus it will be enabled, then the args_ind will be recorded
@@ -305,7 +269,157 @@ class MalangeTokenizer:
                     if not args_begin:
                         args_ind = ind
                         args_begin = True
-                    args += char
-
+                    # This indicates escaped brackets.
+                    if char == '\\' and nchar == '/' and nnchar == ']':
+                        args += '/'
+                        ind += 1 # immediately jump to skip the secondary index of \.
+                    # Record / 
+                    elif char == '/' and nchar != ']':
+                        args += char
+                    else:
+                        args += char # Add normal characters.
+            elif check_args and close:
+                if char == ']':
+                    self.__token.append(Token('MALANGE_BRAC_CLOSE', ']', sind+ind))
+                else:
+                    error({
+                        'component' : 'syntax.malange.invalidmalangeclosing',
+                        'message'   : f'After a Malange keyword in a closing tag of a Malange block it must be followed by ].',
+                        'index'     : sind+ind
+                        })
             ind += 1
-        return start_ind+ind
+        return sind+ind
+
+    def __process_html_tag(self, file: str, sind: int):
+        '''
+            Created to process html tags. The mechanism is like this:
+            - First it will begin by scanning whether the tag is close or not (L185).
+              if yes, variable close will be enabled.
+            - Second it will begin by scanning the keyword (L198). It is only done if
+              check_args is not enabled. After keyword scan, the check_args is enabled.
+            - Third it will scan arguments (L235, since check_args is enabled). First it will
+              record the starting index of the first char of the arguments. Second any
+              escaped closing bracket is recorded as part of the char without the backslash part.
+              If close is enabled, raise error since arguments are only for opening tags.
+            - Fourth it will finish when unescaped closing bracket is discovered.
+
+            parameters:
+                file:      str = The file string text.
+                start_ind: int = The index of the '/', NOT '['
+            returns:
+                1:         int = The last primary index aka the primary index of unescaped ']'.
+            errors:
+                syntax.html.invalidopentag     = Invalid open tag, eg '< ..' or a HTML tag containing quotes, `, <, =
+                syntax.html.attronclosing      = Usage of attributes on a closing tag.
+                syntax.html.invalidcharkeyword = HTML tag containing quotes, `, <, =.
+        '''
+
+        ind:           int  = 0      # Current secondary (sliced file) index.
+        check_args:    bool = False  # Whether the argument recording is enabled or not.
+        args:          str  = ""     # String variable for arguments.
+        args_begin:    bool = False  # Whether argument recording has begun or not.
+        args_ind:      int  = 0      # The index of the first char of the arguments.
+        keyword:       str  = ""     # String variable for keywords.
+        keyword_begin: bool = False  # Whether keyword recording has begun or not.
+        keyword_ind:   int  = 0      # The index of the first char of the keywords.
+        close:         bool = False  # Whether the tag is closed or not.
+        
+        while ind < len(file):
+            # nchar = Next character, pchar = Previous character, char = Current character, nnchar = Double next char
+            char = file[ind]
+            try:
+                nchar: str = file[ind+1]
+            except IndexError:
+                nchar: str = ""
+            try:
+                pchar: str = file[ind-1]
+            except IndexError:
+                pchar: str = ""
+            try:
+                nnchar: str = file[ind+2]
+            except IndexError:
+                nnchar: str = ""
+
+            # --- Check for [/
+            if ind == 0:
+                if char == "/":
+                    self.__token.append(Token('HTML_ELEMENT_MID', '</', sind+ind-1))
+                    close = True
+                    if nchar.isspace():
+                        error({
+                        'component' : 'syntax.html.invalidopentag',
+                        'message'   : 'The "<" is seperated from the keyword.',
+                        'index'     : sind+ind
+                        })
+                else:
+                    self.__token.append(Token('HTML_ELEMENT_OPEN', '<', sind+ind-1))
+                    if char.isspace():
+                        error({
+                        'component' : 'syntax.html.invalidopentag',
+                        'message'   : 'The "<" is seperated from the keyword.',
+                        'index'     : sind+ind
+                        })
+            # --- Check for the keywords.
+            if not check_args:
+                if not keyword_begin: # Again apply the same technique from Malange block args tokenization.
+                    keyword_ind = ind
+                    keyword_begin = True
+                if char.isspace() or char in (">", "/"):
+                    check_args = True # Begin checking for arguments at the next char, no more keyword scans.
+                    if keyword.isspace() or keyword == "":
+                        error({
+                        'component' : 'syntax.html.emptykeyword',
+                        'message'   : 'Keyword is required.',
+                        'index'     : sind+ind
+                        })
+                    self.__token.append(Token('HTML_ELEMENT_KEYWORD', keyword, sind+keyword_ind))
+                elif char in ("=", '"', "'", "<", "`"):
+                    error({
+                        'component' : 'syntax.html.invalidcharkeyword',
+                        'message'   : 'The keyword can not have these characters: =, :, all quotes, `, and <.',
+                        'index'     : sind+ind
+                        })
+                else:
+                    keyword += char
+
+            # --- If keyword checking is disabled via check_args == True, add the char to the arguments.
+            #     If unescaped ] is dicovered, exit tag processing.
+            #     If escaped ] is discovered, add only the ] to the arguments.
+            elif check_args and not close:
+                if pchar != '\\' and char == '>': # If this char is discovered, end the recording of the HTML tag.
+                    # You can't insert attributes into a closing tag, so no.
+                    self.__token.append(Token('MALANGE_HTML_ATTR', args, sind+args_ind))
+                    self.__token.append(Token('MALANGE_HTML_CLOSE', '>', sind+ind))
+                    break # Exit the loop.
+                elif pchar != '\\' and char == '/' and nchar == '>':
+                    self.__token.append(Token('MALANGE_HTML_ATTR', args, sind+args_ind))
+                    self.__token.append(Token('MALANGE_HTML_SELFCLOSE', '/>', sind+ind))
+                    ind += 1 # Skip the > since that has been taken into account.
+                    break
+                else: # Continue recording the arguments like normal.
+                    # If this is the first time, args_begin will be disabled.
+                    # Thus it will be enabled, then the args_ind will be recorded
+                    # only once. After that the args_ind won't be touched again.
+                    if not args_begin:
+                        args_ind = ind
+                        args_begin = True
+                    # This indicates escaped >
+                    if char == '\\' and nchar == '>':
+                        args += ">"
+                        ind += 1 # immediately jump to skip the secondary index of \.
+                    elif char == '\\' and nchar == '/' and nnchar == '>':
+                        args += "/>"
+                        ind += 2 # Immediately jump to skip the secondary index of \ and /
+                    else:
+                        args += char # Add normal characters.
+            elif check_args and close:
+                if char == '>':
+                    self.__token.append(Token('MALANGE_BRAC_CLOSE', '>', sind+ind))
+                else:
+                    error({
+                        'component' : 'syntax.html.invalidhtmlclosing',
+                        'message'   : f'HTML closing tag after a keyword must be followed by >.',
+                        'index'     : sind+ind
+                        })
+            ind += 1
+        return sind+ind

@@ -3,59 +3,59 @@
 
 ##### ---------- Script
 
-[script src="./desk.mala"]
+[script src="./desk.mala"/]
 
 print("Hello, world")
 
-[/script]
+[/script/]
 
 ##### ---------- For-in rendering.
 
-[for x in a_list]
+[for x in a_list/]
 
 <p>${x}</p>
 
-[/for]
+[/for/]
 
 ##### ---------- While rendering.
 
-[while x == true]
+[while x == true/]
 
 <p>True!</p>
 
-[/while]
+[/while/]
 
 ##### ---------- If-elif-else rendering.
 
-[if status = 0]
+[if status = 0/]
 
 <p>Success!</p>
 
-[elif status = 1]
+[elif status = 1/]
 
 <p>Fail!</p>
 
-[else]
+[else/]
 
 <p>Unknown!
 
-[/if]
+[/if/]
 
 ##### ---------- Switch-case-default rendering.
 
-[switch x]
+[switch x/]
 
-[case 1]
-
-...
-
-[case 2]
+[case 1/]
 
 ...
 
-[case default]
+[case 2/]
 
 ...
 
-[/switch]
+[case default/]
+
+...
+
+[/switch/]
 
