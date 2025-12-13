@@ -9,9 +9,12 @@ An open-source application framework for developing apps.
 [script/]
 
 from malange.types import HTMLObject
+from malange.utils import Reactive
 
-$text: str = ""
-$button_color: str = "red"
+reactive = Reactive(root_object)
+
+text: str = reactive("")
+button_color: str = reactive("red")
 
 def show_text(event: HTMLObject.event):
 		text = "Hello, my name is Malange!"

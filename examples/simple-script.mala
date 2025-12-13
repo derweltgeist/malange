@@ -3,12 +3,18 @@
 
 ##### ---------- Demonstrates reactive variables and event listening.
 
+# Example for Malange code that shows event listening.
+# This example is for developing web application.
+
 [script/]
 
 from malange.types import HTMLObject
+from malange.utils import Reactive
 
-$text: str = ""
-$button_color: str = "red"
+reactive = Reactive(root_object)
+
+text: str = reactive("")
+button_color: str = reactive("red")
 
 def show_text(event: HTMLObject.event):
 		text = "Hello, my name is Malange!"
@@ -32,13 +38,13 @@ def show_text(event: HTMLObject.event):
 
 [script/]
 
-$user_agree: bool
+from malange.utils import Reactive, React
 
-react user_agree : process(user_agree)
+reactive = Reactive(root_object)
 
-# Can be written like this:
-# $user_agree: bool :: func1(), func2(), func3()
-# react user_agree : func1(), func2() :: user_disagree : func3(), func4(), { ... }
+user_agree = reactive()
+
+user_agree.react(process(user_agree()))
 
 [/script]
 
