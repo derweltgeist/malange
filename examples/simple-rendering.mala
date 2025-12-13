@@ -7,7 +7,7 @@
 
 print("Hello, world")
 
-[/script/]
+[/script]
 
 ##### ---------- For-in rendering.
 
@@ -23,7 +23,7 @@ print("Hello, world")
 
 <p>True!</p>
 
-[/while/]
+[/while]
 
 ##### ---------- If-elif-else rendering.
 
@@ -39,7 +39,7 @@ print("Hello, world")
 
 <p>Unknown!
 
-[/if/]
+[/if]
 
 ##### ---------- Switch-case-default rendering.
 
@@ -57,5 +57,5 @@ print("Hello, world")
 
 ...
 
-[/switch/]
+[/switch]
 

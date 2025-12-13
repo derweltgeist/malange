@@ -8,23 +8,24 @@
 
     The list of tokens that will be obtained are:
 
-    - MALANGE_BRAC_OPEN     [, d
-    - MALANGE_BRAC_MID      [/ d
-    - MALANGE_BRAC_CLOSE    ] d
-    - MALANGE_BLOCK_KEYWORD script, for, while, if, elif, else, switch, case, default d
-    - MALANGE_BLOCK_ATTR    ... d
+    - MALANGE_BRAC_BEGINOPEN     [ d
+    - MALANGE_BRAC_BEGINCLOSE    /] d
+    - MALANGE_BRAC_ENDOPEN       [/ d
+    - MALANGE_BRAC_ENDCLOSE      ]
+    - MALANGE_BLOCK_KEYWORD      script, for, while, if, elif, else, switch, case, default d
+    - MALANGE_BLOCK_ATTR         ... d
  
-    - MALANGE_WRAP_OPEN     ${ d
-    - MALANGE_WRAP_CLOSE    }$ d
-    - MALANGE_WRAP_EXPRE    ... d
+    - MALANGE_WRAP_OPEN          ${ d
+    - MALANGE_WRAP_CLOSE         }$ d
+    - MALANGE_WRAP_EXPRE         ... d
 
-    - HTML_TAG_OPEN         < d
-    - HTML_TAG_MID          </
-    - HTML_TAG_CLOSE        > d
-    - HTML_ELEM_KEYWORD     script, h1, etc. d
-    - HTML_ELEM_ATTR        ... d
-    - HTML_PLAIN_TEXT       ... d
-    - HTML_JS_SCRIPT        ... d
+    - HTML_TAG_OPEN              < d
+    - HTML_TAG_MID               </
+    - HTML_TAG_CLOSE             > d
+    - HTML_ELEM_KEYWORD          script, h1, etc. d
+    - HTML_ELEM_ATTR             ... d
+    - HTML_PLAIN_TEXT            ... d
+    - HTML_JS_SCRIPT             ... d
 
 '''
 
@@ -201,12 +202,12 @@ class MalangeTokenizer:
             keyword_list: list[str] = []
             if ind == 0:
                 if char == "/":
-                    self.__token.append(Token('MALANGE_BRAC_MID', '[/', sind+ind-1))
+                    self.__token.append(Token('MALANGE_BRAC_ENDOPEN', '[/', sind+ind-1))
                     # Several keywords don't have a closing counterpart.
                     keyword_list = ['script', 'for', 'while', 'if', 'match']
                     close = True
                 else:
-                    self.__token.append(Token('MALANGE_BRAC_OPEN', '[', sind+ind-1))
+                    self.__token.append(Token('MALANGE_BRAC_BEGINOPEN', '[', sind+ind-1))
                     keyword_list = ['script', 'for', 'while', 'if', 'match',
                         'elif', 'else', 'case', 'default']
             # --- Check for the keywords.
@@ -254,7 +255,7 @@ class MalangeTokenizer:
                     if args and args[0].isspace(): # The arguments must be seperated from the keyword.
                         # Append the tokens.
                         self.__token.append(Token('MALANGE_BLOCK_ATTR', args, sind+args_ind))
-                        self.__token.append(Token('MALANGE_BRAC_CLOSE', ']', sind+ind))
+                        self.__token.append(Token('MALANGE_BRAC_BEGINCLOSE', '/]', sind+ind))
                         break # Exit the loop.
                     else:
                         error({
@@ -280,7 +281,7 @@ class MalangeTokenizer:
                         args += char # Add normal characters.
             elif check_args and close:
                 if char == ']':
-                    self.__token.append(Token('MALANGE_BRAC_CLOSE', ']', sind+ind))
+                    self.__token.append(Token('MALANGE_BRAC_ENDCLOSE', ']', sind+ind))
                 else:
                     error({
                         'component' : 'syntax.malange.invalidmalangeclosing',

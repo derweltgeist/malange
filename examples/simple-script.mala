@@ -3,7 +3,7 @@
 
 ##### ---------- Demonstrates reactive variables and event listening.
 
-[script]
+[script/]
 
 from malange.types import HTMLObject
 
@@ -30,7 +30,7 @@ def show_text(event: HTMLObject.event):
 
 ##### ---------- Demonstrates binding mechanism and reactive functions.
 
-[script]
+[script/]
 
 $user_agree: bool
 
@@ -59,7 +59,7 @@ react user_agree : process(user_agree)
 
 ##### ---------- Demonstrating injecting modules.
 
-[script]
+[script/]
 
 from malange.injection import MyBackendAPI
 

@@ -1,7 +1,10 @@
 # Malange Blocks
 
-- MALANGE_BRAC_OPEN      [       MALANGE_BRAC_MID      [/
-- MALANGE_BRAC_CLOSE     ]
+- MALANGE_BRAC_BEGINOPEN  [ d    - MALANGE_BRAC_ENDOPEN       [/ d
+    
+- MALANGE_BRAC_BEGINCLOSE /] d   - MALANGE_BRAC_ENDCLOSE      ]
+    
+
 
 - MALANGE_BLOCK_KEYWORD  for     MALANGE_BLOCK_ATTR    ... x in ...
 

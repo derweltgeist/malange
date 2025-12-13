@@ -6,7 +6,7 @@ An open-source application framework for developing apps.
 # Example for Malange code that shows event listening.
 # This example is for developing web application.
 
-[script]
+[script/]
 
 from malange.types import HTMLObject
 
