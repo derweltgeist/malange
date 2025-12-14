@@ -112,11 +112,11 @@ class MalangeTokenizer:
 
             # Check for Malange tags.
             if pchar != "\\" and char == "[" and self.__mode == "normal":
-                new_ind = self.__process_mala_tag(file[ind+1:], ind+2)
+                new_ind = self.__process_mala_tag(file[ind+1:], ind+1)
                 ind     = new_ind # Set the new index.
             # Check for HTML tags.
             elif pchar != "\\" and char == "<" and self.__mode == "normal":
-                new_ind: int = self.__process_html_tag(file[ind+1:], ind+2)
+                new_ind: int = self.__process_html_tag(file[ind+1:], ind+1)
                 ind: int     = new_ind
             # Check for Python.
             elif self.__mode == "python":
@@ -297,12 +297,19 @@ class MalangeTokenizer:
             - First it will begin by scanning whether the tag is close or not (L185).
               if yes, variable close will be enabled.
             - Second it will begin by scanning the keyword (L198). It is only done if
-              check_args is not enabled. After keyword scan, the check_args is enabled.
+              check_args is not enabled. After keyword scan, the check_args is enabled
+              to ensure no keyword scanning again.
             - Third it will scan arguments (L235, since check_args is enabled). First it will
-              record the starting index of the first char of the arguments. Second any
-              escaped closing bracket is recorded as part of the char without the backslash part.
-              If close is enabled, raise error since arguments are only for opening tags.
-            - Fourth it will finish when unescaped closing bracket is discovered.
+              record the starting index of the first char of the arguments. Then it began
+              scanning.
+                If opening tag: The scan will continue until > of > or / of /> is reached. 
+                If closing tag: Raise error since arguments are only for opening tags. However
+                if it is only whitespace it is ignored.
+            - Fourth, once the chars are reached (that are unescaped), it will exit.
+            - The index is the final primary index.
+
+            Primary index   = Index of the main loop (the __lexer loop)
+            Secondary index = Index of the side loop (the __process_html_tag loop)
 
             parameters:
                 file:      str = The file string text.
@@ -332,9 +339,9 @@ class MalangeTokenizer:
                 nchar: str = file[ind+1]
             except IndexError:
                 nchar: str = ""
-            try:
+            if ind-1 >= 0:
                 pchar: str = file[ind-1]
-            except IndexError:
+            else:
                 pchar: str = ""
             try:
                 nnchar: str = file[ind+2]
@@ -365,20 +372,23 @@ class MalangeTokenizer:
                 if not keyword_begin: # Again apply the same technique from Malange block args tokenization.
                     keyword_ind = ind
                     keyword_begin = True
-                if char.isspace() or char in (">", "/"):
+                if ind == 0 and char == "/":
+                    ind += 1
+                    continue
+                if char.isspace() or char == ">" or (char == "/" and nchar == ">"):
                     check_args = True # Begin checking for arguments at the next char, no more keyword scans.
                     if keyword.isspace() or keyword == "":
                         error({
                         'component' : 'syntax.html.emptykeyword',
                         'message'   : 'Keyword is required.',
-                        'index'     : sind+ind
+                        'index'     : sind+keyword_ind
                         })
                     self.__token.append(Token('HTML_ELEMENT_KEYWORD', keyword, sind+keyword_ind))
-                elif char in ("=", '"', "'", "<", "`"):
+                elif char in ("=", '"', "'", "<", "`", "\\"):
                     error({
                         'component' : 'syntax.html.invalidcharkeyword',
                         'message'   : 'The keyword can not have these characters: =, :, all quotes, `, and <.',
-                        'index'     : sind+ind
+                        'index'     : sind+keyword_ind
                         })
                 else:
                     keyword += char
@@ -386,16 +396,17 @@ class MalangeTokenizer:
             # --- If keyword checking is disabled via check_args == True, add the char to the arguments.
             #     If unescaped ] is dicovered, exit tag processing.
             #     If escaped ] is discovered, add only the ] to the arguments.
-            elif check_args and not close:
+            if check_args and not close:
                 if pchar != '\\' and char == '>': # If this char is discovered, end the recording of the HTML tag.
                     # You can't insert attributes into a closing tag, so no.
+                    ind += 1
                     self.__token.append(Token('MALANGE_HTML_ATTR', args, sind+args_ind))
                     self.__token.append(Token('MALANGE_HTML_CLOSE', '>', sind+ind))
                     break # Exit the loop.
                 elif pchar != '\\' and char == '/' and nchar == '>':
+                    ind += 2
                     self.__token.append(Token('MALANGE_HTML_ATTR', args, sind+args_ind))
                     self.__token.append(Token('MALANGE_HTML_SELFCLOSE', '/>', sind+ind))
-                    ind += 1 # Skip the > since that has been taken into account.
                     break
                 else: # Continue recording the arguments like normal.
                     # If this is the first time, args_begin will be disabled.
@@ -415,7 +426,12 @@ class MalangeTokenizer:
                         args += char # Add normal characters.
             elif check_args and close:
                 if char == '>':
+                    ind += 1
                     self.__token.append(Token('MALANGE_BRAC_CLOSE', '>', sind+ind))
+                    break
+                elif char.isspace():
+                    ind += 1
+                    continue
                 else:
                     error({
                         'component' : 'syntax.html.invalidhtmlclosing',
