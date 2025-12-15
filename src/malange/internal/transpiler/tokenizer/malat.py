@@ -95,6 +95,7 @@ class MalangeTokenizer:
         '''
 
         ind = 0
+        js  = False
 
         # Begin looping over file char by char. We use WHILE to allow us to jump iterations,
         # thus making tokenizing significantly easier.
@@ -113,8 +114,8 @@ class MalangeTokenizer:
 
             # Check for Malange tags.
             if pchar != "\\" and char == "[" and self.__mode == "normal":
-                new_ind = self.__process_mala_tag(file[ind+1:], ind+1)
-                ind     = new_ind # Set the new index.
+                new_ind, js = self.__process_mala_tag(file[ind+1:], ind+1)
+                ind: int    = new_ind # Set the new index.
             # Check for HTML tags.
             elif pchar != "\\" and char == "<" and self.__mode == "normal":
                 new_ind: int = self.__process_html_tag(file[ind+1:], ind)
@@ -262,7 +263,7 @@ class MalangeTokenizer:
             ind += 1
         return sind+ind
 
-    def __process_html_tag(self, file: str, sind: int):
+    def __process_html_tag(self, file: str, sind: int) -> tuple[int, bool]:
         '''
             Created to process html tags. The mechanism is like this:
             - First it will begin by scanning whether the tag is close or not (L185).
@@ -308,6 +309,7 @@ class MalangeTokenizer:
         keyword_ind:   int  = 0      # The index of the first char of the keywords.
         # ------
         close:         bool = False  # Whether the tag is closed or not.
+        js:            bool = False
         
         # Main loop.
         while ind < len(file):
@@ -348,6 +350,8 @@ class MalangeTokenizer:
                         'message'   : 'Keyword is required.',
                         'index'     : sind+keyword_ind
                         })
+                    if keyword == "script":
+                        js = True
                     self.__token.append(Token('HTML_ELEMENT_KEYWORD', keyword, sind+keyword_ind))
                 elif char in ("=", '"', "'", "<", "`", "\\"): # A keyword that contains these chars is not accepted.
                     error({
@@ -409,4 +413,4 @@ class MalangeTokenizer:
                         'index'     : sind+ind
                         })
             ind += 1
-        return sind+ind
+        return sind+ind, js
