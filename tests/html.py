@@ -1,143 +1,169 @@
+token = []
+
+from typing import Optional
+
+class Token:
+    '''For Malange tokens.'''
+    def __init__(self, token: str = "",
+                 value: str = "", ind: int = 0) -> None:
+        self.token: Optional[str] = token
+        self.value: Optional[str] = value
+        self.ind:   Optional[int] = ind
+    def __call__(self) -> str:
+        return f"{self.token} [{self.ind}] : '{self.value}'"
+
 def __process_html_tag(file: str, sind: int):
     '''
-            Created to process html tags. The mechanism is like this:
-            - First it will begin by scanning whether the tag is close or not (L185).
-              if yes, variable close will be enabled.
-            - Second it will begin by scanning the keyword (L198). It is only done if
-              check_args is not enabled. After keyword scan, the check_args is enabled.
-            - Third it will scan arguments (L235, since check_args is enabled). First it will
-              record the starting index of the first char of the arguments. Second any
-              escaped closing bracket is recorded as part of the char without the backslash part.
-              If close is enabled, raise error since arguments are only for opening tags.
-            - Fourth it will finish when unescaped closing bracket is discovered.
+        Created to process html tags. The mechanism is like this:
+        - First it will begin by scanning whether the tag is close or not (L185).
+          if yes, variable close will be enabled.
+        - Second it will begin by scanning the keyword (L198). It is only done if
+          check_args is not enabled. After keyword scan, the check_args is enabled
+          to ensure no keyword scanning again.
+        - Third it will scan arguments (L235, since check_args is enabled). First it will
+          record the starting index of the first char of the arguments. Then it began
+          scanning.
+            If opening tag: The scan will continue until > of > or / of /> is reached. 
+            If closing tag: Raise error since arguments are only for opening tags. However
+            if it is only whitespace it is ignored.
+        - Fourth, once the chars are reached (that are unescaped), it will exit.
+        - The index is the final primary index.
 
-            parameters:
-                file:      str = The file string text.
-                start_ind: int = The index of the '/', NOT '['
-            returns:
-                1:         int = The last primary index aka the primary index of unescaped ']'.
-            errors:
-                syntax.html.invalidopentag     = Invalid open tag, eg '< ..' or a HTML tag containing quotes, `, <, =
-                syntax.html.attronclosing      = Usage of attributes on a closing tag.
-                syntax.html.invalidcharkeyword = HTML tag containing quotes, `, <, =.
-        '''
-    print(f"[SECOND] SIND IS {sind}")
+        Primary index   = Index of the main loop (the __lexer loop)
+        Secondary index = Index of the side loop (the __process_html_tag loop)
+
+        parameters:
+            file:                      str = The file string text.
+            start_ind:                 int = The index of the '/', NOT '['
+        returns:
+            1:                         int = The last primary index aka the primary index of unescaped ']'.
+        errors:
+            syntax.html.invalidopentag     = Invalid open tag, eg '< ..' or a HTML tag containing quotes, `, <, =
+            syntax.html.attronclosing      = Usage of attributes on a closing tag.
+            syntax.html.invalidcharkeyword = HTML tag containing quotes, `, <, =.
+    '''
+
+    # These are temporary state variables.
     ind:           int  = 0      # Current secondary (sliced file) index.
-    check_args:    bool = False  # Whether the argument recording is enabled or not.
-    args:          str  = ""     # String variable for arguments.
-    args_begin:    bool = False  # Whether argument recording has begun or not.
-    args_ind:      int  = 0      # The index of the first char of the arguments.
+    # ------
+    check_attr:    bool = False  # Whether the argument recording is enabled or not.
+    attr:          str  = ""     # String variable for attributes.
+    attr_ind:      int  = 0      # The index of the first char of the attributes.
+    attr_str_on:   bool = False  # Indicating that the attribute is inside a string eg style="..."
+    attr_str_char: str  = ""     # Whether the string begin quote is single or double.
+    # ------
     keyword:       str  = ""     # String variable for keywords.
     keyword_begin: bool = False  # Whether keyword recording has begun or not.
     keyword_ind:   int  = 0      # The index of the first char of the keywords.
-    close:         bool = False  # Whether the tag is closed or not.
+    # ------
+    end:          bool = False  # Whether the tag is an end or an open tag.
     
+    # Main loop.
     while ind < len(file):
-        # nchar = Next character, pchar = Previous character, char = Current character, nnchar = Double next char
+        # nchar = Next character, pchar = Previous character,
+        # char = Current character, nnchar = Double next char
         char = file[ind]
+        print(f"[SECONDARY] Now scanning character '{char}' of primary index [{sind+ind+1}] and secondary index [{ind}]")
         try:
             nchar: str = file[ind+1]
         except IndexError:
             nchar: str = ""
-        try:
-            pchar: str = file[ind-1]
-        except IndexError:
-            pchar: str = ""
-        try:
-            nnchar: str = file[ind+2]
-        except IndexError:
-            nnchar: str = ""
 
-        # --- Check for [/
-        if ind == 0:
+        # 1-- Check for whether the opening bracket is part of a start tag (<) or end tag (</)
+        if ind == 0: # On index 0m the character is either / (closing tag) or non-/ (opening tag)
             if char == "/":
-                print("[SECOND/BEGIN/CLOSE] IT IS CLOSE")
-                close = True
-                if nchar.isspace():
-                    print("ERROR < IS FOLLOWED BY SPACE")
-            else:
-                print("[SECOND/BEGIN/OPEN] IT IS OPEN")
-                if char.isspace():
-                    print("ERROR < 59 IS FOLLOWED BY SPACE")
-        if not check_args:
-            if not keyword_begin: # Again apply the same technique from Malange block args tokenization.
-                keyword_ind = ind
-                keyword_begin = True
-            if ind == 0 and char == "/":
+                # This means a HTML closing tag.
+                token.append(Token('HTML_TAG_MID', '</', sind+ind))
+                end = True # Enable the close variable to True.
+                # Skip to the next char for keyword record (next block)
                 ind += 1
-                continue
-            if char.isspace() or char == ">" or (char == "/" and nchar == ">"):
-                print(f"KEYWORD ENDS WITH ({keyword}), char ({char}), nchar ({nchar}), pchar ({pchar}), nnchar ({nnchar})")
-                check_args = True # Begin checking for arguments at the next char, no more keyword scans.
-                if keyword.isspace() or keyword == "":
-                    print("ERROR INVALID KEYWORD")
-            elif char in ("=", '"', "'", "`", "\\", "<"):
-                print("ERROR INVALID KEYWORD NO SPECIAL CHAR")
+                continue # Skip to the next char (the keyword).
             else:
-                keyword += char
+                token.append(Token('HTML_TAG_OPEN', '<', sind+ind))
 
-        # --- If keyword checking is disabled via check_args == True, add the char to the arguments.
-        #     If unescaped ] is dicovered, exit tag processing.
-        #     If escaped ] is discovered, add only the ] to the arguments.
-        if check_args and not close:
-            print(f"[SECOND/ARGS/OPEN] KEYWORD IS {keyword}")
-            if pchar not in ('/', '\\') and char == '>': # If this char is discovered, end the recording of the HTML tag.
+        # 2-- Check for the keywords. Since check_args default value is False, this will automatically
+        # --- run after the previous if block until check_args is True. If check_args is False, this indicates
+        # --- keyword checking.
+        if not check_attr:
+            # Record the first index of the keyword. This block will only run once on the first char of the keyword.
+            if not keyword_begin: # keyword_begin is written so that this block will only run once.
+                keyword_ind = ind + 1
+                keyword_begin = True
+            # This first block to detect whitespace, >, or /> (as those are the ones who end keyword detect)
+            if char.isspace() or char == ">" or (char == "/" and nchar == ">"):
+                check_attr = True # Begin checking for arguments (or ending the HTML tag scan) at the next char.
+                if keyword.isspace() or keyword == "": # An empty or whitespace keyword is not accepted.
+                    print(
+                        f"[SECONDARY] Error in primary index [{sind+keyword_ind}]: When processing keyword the keyword is empty.")
+                    exit(1)
+                token.append(Token('HTML_ELEMENT_KEYWORD', keyword, sind+keyword_ind))
+                attr_ind = ind + 1
+            elif char in ("=", '"', "'", "<", "`", "\\"): # A keyword that contains these chars is not accepted.
+                print(
+                f"[SECONDARY] Error in primary index [{sind+ind-1}]: when processing keyword the forbidden character '{char}' is detected.")
+                exit(1)
+            else:
+                keyword += char # Anything other than that just add to the keyword.
+
+        # 3-- If keyword checking is disabled via check_args == True, add the char to the arguments.
+        # --- If > or /> is dicovered, exit HTML tag scanning.
+        # --- It will parse string/number/injection of a HTML argument.
+        # --- This will immediately run after keyword scanning is disabled.
+        if check_attr and not end:
+            # If > is discovered and is not currently recording a string.
+            if char == '>' and not attr_str_on:
                 # You can't insert attributes into a closing tag, so no.
                 ind += 1
-                print(f"[SECOND/END/OPEN] END WITH >, current char is {char}, index is {sind+ind}")
-                
-                print(f"[SECOND/END/OPEN] ARGS ARE ({args})")
-
+                if attr != "":
+                    token.append(Token('HTML_ELEMENT_ATTR', attr, sind+attr_ind))
+                token.append(Token('HTML_TAG_CLOSE', '>', sind+ind))
                 break # Exit the loop.
-            elif pchar != '\\' and char == '/' and nchar == '>': # This indicates /> ending.
+            elif char == '/' and nchar == '>' and not attr_str_on:
                 ind += 2
-                print(f"[SECOND/END/OPEN] END WITH />, current char is {char}, index is {sind+ind}")
-                
-                print(f"[SECOND/END/OPEN] ARGS ARE ({args})")
+                if attr != "":
+                    token.append(Token('HTML_ELEMENT_ATTR', attr, sind+attr_ind))
+                token.append(Token('HTML_TAG_SELFCLOSE', '/>', sind+ind-1))
                 break
-            else: # Continue recording the arguments like normal.
-                # If this is the first time, args_begin will be disabled.
-                # Thus it will be enabled, then the args_ind will be recorded
-                # only once. After that the args_ind won't be touched again.
-                if not args_begin:
-                    args_ind = ind
-                    args_begin = True
+            # Continue recording the arguments like normal.
+            else:
                 # This indicates escaped >
-                if char == '\\' and nchar == '>':
-                    args += ">"
-                    ind += 1 # immediately jump to skip the secondary index of \.
-                elif char == '\\' and nchar == '/' and nnchar == '>':
-                    args += "/>"
-                    ind += 2 # Immediately jump to skip the secondary index of \ and /
+                if char in ('"', "'"):
+                    if char == attr_str_char:
+                        attr_str_on = False
+                        attr_str_char = ""
+                    else:
+                        attr_str_on = True
+                        attr_str_char = char
+                    attr += char
                 else:
-                    args += char # Add normal characters.
-        elif check_args and close:
-            print(f"[SECOND/ARGS/CLOSE] KEYWORD IS {keyword}")
-            if pchar != '\\' and char == '>':
+                    attr += char # Add normal characters.
+        elif check_attr and end:
+            if char == '/' and nchar == '>':
+                token.append(Token('HTML_TAG_SELFCLOSE', '/>', sind+ind+1))
+                ind += 2
+                break
+            elif char == '>':
+                token.append(Token('HTML_TAG_CLOSE', '>', sind+ind+1))
                 ind += 1
-                print(f"[SECOND/END/CLOSE] CLOSE END WITH >, current char is {char}, index is {sind+ind}")            
                 break
             elif char.isspace():
                 ind += 1
                 continue
             else:
-                if char == '\\' and nchar == '>':
-                    args += '>'
-                    ind += 1
-                print(char)
-                print("INVALID CLOSING TAG")
-
-        print(f"[SECOND] Secondary Index is {ind}")
+                print(f"[SECONDARY] Error in primary index [{sind+ind}]: An attribute can't exist in an end tag.")
+                exit(1)
         ind += 1
     return sind+ind
 
 def main():
-    file = r"a<habcwelcome</habc/>abc"
-#           012345678911111111112222222222333    primary
-#                     01234567890123456789012
+    file = r'a<abc> abcdefg </habc>abc'
+#            012345678911111111112222222222333    primary
+#                      01234567890123456789012
 #             012456                  secondary (for opening)
-#                                0123456         secondary (for closing)
+#                              0123456         secondary (for closing)
     i = 0
+    print(f"Scan text: '{file}'")
+    print("-------------")
     while i < len(file):
         char = file[i]
         if i-1 >= 0:
@@ -148,17 +174,21 @@ def main():
             nchar = file[i+1]
         except IndexError:
             nchar = ""
-        print(f"[PRIMARY] CURRENTLY SCANNING: ({char})")
+        print(f"[PRIMARY] Now scanning character '{char}' of index [{i}]")
         if char == "<" and pchar != "\\":
-            print(f"[PRIMARY] starting index of < is: {i}")
+            print(f"[PRIMARY] Entering secondary, starting index of < is: [{i}]")
 
             final_ind = __process_html_tag(file[i+1:], i)
             i = final_ind
-            print(f"[PRIMARY] ending index of > is: {final_ind}")
+            print(f"[PRIMARY] Exiting secondary, ending index of > is: [{final_ind}]")
         elif char == "\\" and nchar == "<":
-            print("[PRIMARY] SKIPPING ESCAPE CHAR")
+            print("[PRIMARY] Skipping escape character.")
         else:
-            print(f"[PRIMARY] NON-SECONDARY CHAR: ({char})")
+            print(f"[PRIMARY] Character is pure primary.")
         i += 1
+    print("-------------")
+    print("TOKEN RESULT:")
+    for i, t in enumerate(token):
+        print(f"{i} > {t()}")
 
 main()
