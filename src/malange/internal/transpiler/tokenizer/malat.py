@@ -69,16 +69,17 @@ class MalangeTokenizer:
 
         # Python state variables.
         self.__py_exist:       bool = False    # Whether a [script/] tag has existed or not.
-        self.__py_text:        str  = ""       # Py string.
-        self.__py_comment:     bool = False    # whether js scanning is entering commenting mode.
+        self.__py_text:        str  = ""       # Python text.
+        self.__py_comment:     bool = False    # whether Python scanning is entering commenting mode.
         self.__py_ind:         int  = 0        # first index of Python index.
-        self.__py_cont_str:    bool = False
+        self.__py_cont_str:    bool = False    # Whether line continuation is true or not.
 
-        self.__py_string:      bool = False
-        self.__py_string_f:    bool = False
-        self.__py_string_r:    bool = False
-        self.__py_string_dq:   bool = False
-        self.__py_string_tr:   bool = False
+        # Python string state variables (reset when returning to normal Python mode.
+        self.__py_string:      bool = False    # Indicating that Python is in string mode.
+        self.__py_string_f:    bool = False    # Indicating an f-string.
+        self.__py_string_r:    bool = False    # Indicating an r-string.
+        self.__py_string_dq:   bool = False    # Indicating whether the string is double quote or not.
+        self.__py_string_tr:   bool = False    # Indicating whether the string is triple or lone quote.
 
         self.__lexer(file)
 
@@ -196,6 +197,18 @@ class MalangeTokenizer:
                 else:
                     self.__process_js_text(char, pchar, nchar, ind)
             ind += 1
+        if self.__mode == "js":
+            error({
+            'component' : 'syntax.html.unterminatedjs',
+            'message'   : 'JS <script> tag is not terminated at the end of the file.',
+            'index'     : ind
+            })
+        elif self.__mode == "python":
+            error({
+            'component' : 'syntax.malange.unterminatedpython',
+            'message'   : 'Python [script/] tag is not terminated at the end of the file.',
+            'index'     : ind
+            })
 
     def __process_malange_tag(self, file: str, sind: int) -> tuple[int, bool]:
         '''
@@ -636,7 +649,7 @@ class MalangeTokenizer:
 
     def __process_py_text(self, char: str, pchar: str, ppchar: str, nchar: str, nnchar: str, ind: int) -> int:
         '''
-            Process Python text. The way it works is like this:
+            Process Python text in an ugly way. The way it works is like this:
             - The modes are seperated into three types:
             > Normal: This is the default mode.
             > Commenting: Can be singleline or multiline.

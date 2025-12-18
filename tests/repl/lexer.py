@@ -747,6 +747,9 @@ def main(file):
     if mode == "js":
         print("[JS] Error at the end of file: <script> is not closed.")
         exit(1)
+    elif mode == "python":
+        print("[PYTHON] Error at the end of file: [script/] is not closed.")
+        exit(1)
     print("-------------")
     print("TOKEN RESULT:")
     for i, t in enumerate(token):
@@ -756,7 +759,6 @@ file = r'''
 [script/]
 R" sdsds \
 dsds"
-[/script]
 '''
 #        012345678911111111112222222222333    primary
 #                  01234567890123456789012
