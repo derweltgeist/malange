@@ -13,7 +13,7 @@ print("Hello, world")
 
 [for x in a_list/]
 
-<p>${x}</p>
+<p>{x}</p> <!-- Escape with a \ before {. -->
 
 [/for/]
 
