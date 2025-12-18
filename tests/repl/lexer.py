@@ -558,7 +558,7 @@ def process_py_text(char: str, pchar: str, ppchar: str, nchar: str, nnchar: str,
 
     # 4-- String detection, only if commenting is disabled.
     elif char in ('"', "'") and not py_comment:
-        if pchar == "\\": # Check the escape
+        if pchar == "\\" and ppchar != "\\": # Check the escape
             if py_string_r: # if it is a raw string ignore the escape
                 pass
             else:
@@ -757,8 +757,8 @@ def main(file):
 
 file = r'''
 [script/]
-R" sdsds \
-dsds"
+""" sdsds\\""""
+[/script]
 '''
 #        012345678911111111112222222222333    primary
 #                  01234567890123456789012

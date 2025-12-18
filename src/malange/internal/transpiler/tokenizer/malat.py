@@ -759,7 +759,7 @@ class MalangeTokenizer:
 
         # 4-- String detection, only if commenting is disabled.
         elif char in ('"', "'") and not self.__py_comment:
-            if pchar == "\\": # Check the escape
+            if pchar == "\\" and ppchar !=  "\\": # Check the escape
                 if self.__py_string_r: # if it is a raw string ignore the escape
                     pass
                 else:
