@@ -76,3 +76,25 @@ data = MyBackendAPI()
 
 <p>${data.account}</p>
 
+#### ----------- Demonstrating component injection.
+
+# file1.mala
+
+<p>Some stuff</p>
+
+# file2.mala
+
+[script/]
+
+from file1 import file1
+
+[/script]
+
+[/file1/]
+
+#### ----------- Demonstrating seperate script file.
+
+[/script src="source.py"/]
+
+<p>Some stuff</p>
+
