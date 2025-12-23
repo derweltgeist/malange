@@ -1,3 +1,6 @@
+import time
+start = time.perf_counter()
+
 token = []
 
 from typing import Optional
@@ -756,13 +759,374 @@ def main(file):
         print(f"{i} > {t()}")
 
 file = r'''
-[script/]
-""" sdsds\\""""
-[/script]
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Complex HTML Demo</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- ===================== -->
+    <!-- GLOBAL STYLES -->
+    <!-- ===================== -->
+    <style>
+        :root {
+            --bg: #0f1220;
+            --panel: #1a1e3a;
+            --accent: #5ddcff;
+            --accent-2: #c77dff;
+            --text: #e6e6eb;
+            --muted: #9aa0b3;
+            --danger: #ff6b6b;
+            --success: #4ade80;
+            --radius: 12px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #0f1220, #090b16);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        header {
+            padding: 1.5rem 2rem;
+            background: var(--panel);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+
+        header h1 {
+            font-size: 1.4rem;
+            letter-spacing: 1px;
+        }
+
+        nav ul {
+            list-style: none;
+            display: flex;
+            gap: 1rem;
+        }
+
+        nav a {
+            text-decoration: none;
+            color: var(--text);
+            padding: 0.4rem 0.7rem;
+            border-radius: 6px;
+        }
+
+        nav a:hover {
+            background: rgba(255,255,255,0.08);
+        }
+
+        main {
+            padding: 2rem;
+            display: grid;
+            grid-template-columns: 3fr 1fr;
+            gap: 2rem;
+        }
+
+        section {
+            background: var(--panel);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        section h2 {
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+        }
+
+        /* ===================== */
+        /* DASHBOARD CARDS */
+        /* ===================== */
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 1rem;
+        }
+
+        .card {
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            color: #000;
+            padding: 1rem;
+            border-radius: var(--radius);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.35);
+        }
+
+        .card p {
+            font-size: 0.9rem;
+        }
+
+        /* ===================== */
+        /* TABS */
+        /* ===================== */
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 1rem;
+        }
+
+        .tab {
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            color: var(--muted);
+        }
+
+        .tab.active {
+            color: var(--text);
+            border-bottom: 2px solid var(--accent);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* ===================== */
+        /* TABLE */
+        /* ===================== */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        th, td {
+            padding: 0.6rem;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            text-align: left;
+        }
+
+        th {
+            color: var(--muted);
+            font-weight: 600;
+        }
+
+        /* ===================== */
+        /* FORM */
+        /* ===================== */
+        form {
+            display: grid;
+            gap: 0.8rem;
+        }
+
+        input, textarea, select, button {
+            padding: 0.6rem;
+            border-radius: 6px;
+            border: none;
+            font-size: 0.9rem;
+        }
+
+        input, textarea, select {
+            background: #0c0f1f;
+            color: var(--text);
+        }
+
+        button {
+            background: var(--accent);
+            color: #000;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        button.danger {
+            background: var(--danger);
+            color: #000;
+        }
+
+        /* ===================== */
+        /* SIDEBAR */
+        /* ===================== */
+        aside {
+            background: var(--panel);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            height: fit-content;
+        }
+
+        .log {
+            font-size: 0.85rem;
+            color: var(--muted);
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        /* ===================== */
+        /* MODAL */
+        /* ===================== */
+        .modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-box {
+            background: var(--panel);
+            padding: 2rem;
+            border-radius: var(--radius);
+            max-width: 400px;
+            width: 100%;
+        }
+
+        footer {
+            padding: 1rem;
+            text-align: center;
+            color: var(--muted);
+        }
+    </style>
+</head>
+
+<body>
+<header>
+    <h1>System Dashboard</h1>
+    <nav>
+        <ul>
+            <li><a href="#">Home</a></li>
+            <li><a href="#">Metrics</a></li>
+            <li><a href="#">Settings</a></li>
+        </ul>
+    </nav>
+</header>
+
+<main>
+    <div>
+        <section>
+            <h2>Overview</h2>
+            <div class="cards">
+                <div class="card">
+                    <h3>CPU</h3>
+                    <p id="cpu">32%</p>
+                </div>
+                <div class="card">
+                    <h3>Memory</h3>
+                    <p id="memory">5.1 GB</p>
+                </div>
+                <div class="card">
+                    <h3>Network</h3>
+                    <p id="network">1.2 Mbps</p>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>Details</h2>
+            <div class="tabs">
+                <div class="tab active" data-tab="processes">Processes</div>
+                <div class="tab" data-tab="events">Events</div>
+            </div>
+
+            <div class="tab-content active" id="processes">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>PID</th>
+                            <th>Name</th>
+                            <th>CPU</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>1021</td><td>renderer</td><td>12%</td></tr>
+                        <tr><td>1044</td><td>worker</td><td>7%</td></tr>
+                        <tr><td>1098</td><td>network</td><td>4%</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="tab-content" id="events">
+                <p>No critical events reported.</p>
+            </div>
+        </section>
+
+        <section>
+            <h2>Create Alert</h2>
+            <form id="alertForm">
+                <input type="text" placeholder="Alert name" required>
+                <select>
+                    <option>CPU Usage</option>
+                    <option>Memory Usage</option>
+                    <option>Network Spike</option>
+                </select>
+                <textarea placeholder="Description"></textarea>
+                <button type="submit">Create</button>
+            </form>
+        </section>
+    </div>
+
+    <aside>
+        <h2>Activity Log</h2>
+        <div class="log" id="log">
+            <p>System started.</p>
+        </div>
+        <br>
+        <button class="danger" id="openModal">Shutdown</button>
+    </aside>
+</main>
+
+<footer>
+    © 2025 Complex HTML Demo
+</footer>
+
+<div class="modal" id="modal">
+    <div class="modal-box">
+        <h2>Confirm Action</h2>
+        <p>This will shut down the system.</p>
+        <br>
+        <button id="confirm">Confirm</button>
+        <button class="danger" id="cancel">Cancel</button>
+    </div>
+</div>
+
+<script>
+    // Tabs
+    document.querySelectorAll('.tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            tab.classList.add('active');
+            document.getElementById(tab.dataset.tab).classList.add('active');
+        });
+    });
+
+    // Form
+    document.getElementById('alertForm').addEventListener('submit', e => {
+        e.preventDefault();
+        const log = document.getElementById('log');
+        log.innerHTML += '<p>New alert created.</p>';
+    });
+
+    // Modal
+    const modal = document.getElementById('modal');
+    document.getElementById('openModal').onclick = () => modal.classList.add('active');
+    document.getElementById('cancel').onclick = () => modal.classList.remove('active');
+    document.getElementById('confirm').onclick = () => {
+        alert('System shutting down...');
+        modal.classList.remove('active');
+    };
+</script>
+</body>
+</html>
 '''
-#        012345678911111111112222222222333    primary
-#                  01234567890123456789012
-#          012456                  secondary (for opening)
-#                        0123456         secondary (for closing)
+
 
 main(file)
+stop: float =time.perf_counter()
+print(stop - start)

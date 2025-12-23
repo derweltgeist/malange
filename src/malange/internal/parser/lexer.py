@@ -1,11 +1,9 @@
 '''
 
-    malange.internal.transpiler.tokenizer.malat
+    malange.internal.parser.lexer
 
-    malat = Malange Tokenizer
-
-    Manages the tokenization of Malange elements and HTML elements,
-    as well as managing Python, JS, and style.
+    Manages the tokenization and lexing of Malange elements
+    and HTML elements, as well as managing Python, JS, and style.
 
     Note that those three are not lexed, only managed to check if
     </ or [/ is in a JS/Python/style
@@ -39,17 +37,13 @@
 
 '''
 
-from typing import Optional
-
 from .token import MalangeToken as Token
-from .malapyt import pymalange_tokenize
-from .malajst import process_js, process_style
 from malange.error import ErrorManager
 
 error = ErrorManager()
 
-class MalangeTokenizer:
-    '''Tokenizer class for each Malange file.'''
+class Lexer:
+    '''Tokenizer and lexer class for each Malange file.'''
 
     def __init__(self, file: str, title: str) -> None:
         '''
