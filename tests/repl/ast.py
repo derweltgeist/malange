@@ -27,7 +27,7 @@ class X:
     def nest(self, name: str):
         self.list.insert(self.index+1, X(name, self.pos, self, self.depth + 1))
         self.index += 1
-        return self.list[-1]
+        return self.list[self.index]
     def remove(self):
         self.index -= 1
         return self.list.pop(self.index)

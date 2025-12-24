@@ -38,7 +38,7 @@
 '''
 
 from .token import MalangeToken as Token
-from malange.error import ErrorManager
+from malange.api.error import ErrorManager
 
 error = ErrorManager()
 

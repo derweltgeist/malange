@@ -7,8 +7,8 @@
 
 """
 
-from malange.error import ErrorManager
-from .node import Node
+from malange.api.error import ErrorManager
+from .ast import ASTNode
 
 error = ErrorManager()
 
