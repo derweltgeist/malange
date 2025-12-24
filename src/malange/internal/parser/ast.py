@@ -88,21 +88,31 @@ class ASTNode:
             else: # If the item is a generic item.
                 print("    " * (self.depth + 1) + f"{i}({self.depth}, {ind})") 
         print("    " * (self.depth) + "}")
+    def __update_pos(self):
+        '''Update position of each child nodes.'''
+        for ind, i in enumerate(self.list):
+            if isinstance(i, ASTNode):
+                i.pos = ind
 
     def add(self, obj):
         '''Add the class. parameters: obj: any = Any kind of object you want to add.'''
         self.list.insert(self.index+1, obj)
         self.index += 1
+        self.__update_pos() # Update child nodes position.
         return self
     def nest(self, name: str):
         '''Similar to add() method but you add new node and return the new node instead.'''
-        self.list.insert(self.index+1, ASTNode(name, self.pos, self, self.depth + 1))
+        self.list.insert(self.index+1, ASTNode(
+            name, self.pos, self, self.depth + 1))
         self.index += 1
+        self.__update_pos()
         return self.list[self.index]
     def remove(self):
         '''Remove an item/node.'''
+        obj = self.list.pop(self.index)
         self.index -= 1
-        return self.list.pop(self.index)
+        self.__update_pos()
+        return obj
 
     def up(self):
         '''Return the parent node.'''
@@ -116,7 +126,14 @@ class ASTNode:
             return self.parent
     def down(self):
         '''Return the item or a child node.'''
-        return self.list[self.index]
+        if self.list == []:
+            error({
+            'component' : 'internal.parser.emptynode',
+            'message'   : 'The node is empty.',
+            'index'     : -1
+            })
+        else:
+            return self.list[self.index]
 
     def next(self):
         '''Select the next item within the list.'''
