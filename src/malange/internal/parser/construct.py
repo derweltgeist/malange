@@ -12,7 +12,7 @@ from .ast import ASTNode
 
 error = ErrorManager()
 
-class MalangeConstruct:
+class ASTConstruct:
     def __init__(self):
         ''''''
 

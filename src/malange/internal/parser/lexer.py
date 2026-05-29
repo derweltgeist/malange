@@ -42,7 +42,7 @@ from malange.api.error import ErrorManager
 
 error = ErrorManager()
 
-class Lexer:
+class FileLexer:
     '''Tokenizer and lexer class for each Malange file.'''
 
     def __init__(self, file: str, title: str) -> None:
