@@ -649,8 +649,6 @@ def process_py_text(char: str, pchar: str, ppchar: str, nchar: str, nnchar: str,
     return jump
 
 def run(file):
-
-    # global verbose
     global js_text, js_comment, js_string, js_cont_str, js_ind, mode, py_exist, py_text
     global py_string_dq, py_string_f, py_string_r, py_string_tr, py_string, py_ind
 
@@ -770,6 +768,7 @@ def run(file):
 # TEST SUITE:
 
 def main():
+    global verbose
     # Process contents.
     content = "" 
     # Process arguments.
@@ -799,6 +798,7 @@ def main():
         duration[c] = stats.total_tt
         print(f"Duration is {duration[c]} second.")
     # Calculate regression.
+    print("\n==========================================")
     print("\nProcessing final result:\n")
     x = np.array(multiplier)
     y = np.array([duration[m] for m in multiplier])
