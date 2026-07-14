@@ -1,17 +1,26 @@
-import time
-start = time.perf_counter()
+
 
 token = []
 
 from typing import Optional
 
+import argparse
+import numpy as np
+import cProfile
+import pstats
+
+verbose = False
+
 class Token:
     '''For Malange tokens.'''
     def __init__(self, token: str = "",
                  value: str = "", ind: int = 0) -> None:
+        # global verbose
         self.token: Optional[str] = token
         self.value: Optional[str] = value
         self.ind:   Optional[int] = ind
+        if verbose:
+            print(f"[TOKEN] Initialize token with type '{self.token}' and value '{self.value}' at index '{self.ind}'")
     def __call__(self) -> str:
         if self.value is not None:
             refresh = self.value.replace('\n', r'\n')
@@ -88,7 +97,6 @@ def process_html_tag(file: str, sind: int):
          # nchar = Next character, pchar = Previous character,
          # char = Current character, nnchar = Double next char
          char = file[ind]
-         print(f"[HTML] Now scanning character '{char}' of primary index [{sind+ind+1}] and secondary index [{ind}]")
          try:
              nchar: str = file[ind+1]
          except IndexError:
@@ -611,8 +619,7 @@ def process_py_text(char: str, pchar: str, ppchar: str, nchar: str, nnchar: str,
                         py_text += f"{char}"
                 else: # If it not the same type, just add it like normal eg """ ... ' or " ... '
                     py_text += f"{char}"
-        else: # Which means the opening of the string.
-        # Enable self.__py_string first
+        else: # Which means the opening of the string. first enable self.__py_string
             py_string = True
             # Check if it is single quote or not.
             if char == '"':
@@ -641,17 +648,14 @@ def process_py_text(char: str, pchar: str, ppchar: str, nchar: str, nnchar: str,
             py_text += char
     return jump
 
-def main(file):
+def run(file):
 
-
+    # global verbose
     global js_text, js_comment, js_string, js_cont_str, js_ind, mode, py_exist, py_text
     global py_string_dq, py_string_f, py_string_r, py_string_tr, py_string, py_ind
 
     ind: int = 0     # Primary index.
-
-    print(f"Scan text: '{file}'")
     print("-------------")
-
 
     # Begin looping over file char by char. We use WHILE to allow us to jump iterations,
     # thus making tokenizing significantly easier.
@@ -680,12 +684,15 @@ def main(file):
             refreshed_char = char
         else:
             refreshed_char = r'\n'
-        print(f"[MAIN] Now scanning char '{refreshed_char}' of primary index '{ind}', mode is [{mode}].")
+        if verbose:
+            print(f"[MAIN] Now scanning char '{refreshed_char}' of primary index '{ind}', mode is [{mode}].")
         
         # === A: Normal mode.
         if mode == "normal":
             # Check for Malange tags.
             if pchar != "\\" and char == "[":
+                if verbose:
+                    print(f"[MAIN] Malange tag is detected. Primary index is '{ind}'")
                 new_ind, python = process_malange_tag(file[ind+1:], ind+1)
                 ind = new_ind
                 if python:
@@ -698,6 +705,8 @@ def main(file):
                         exit(1)
             # Check for HTML tags.
             elif pchar != "\\" and char == "<":
+                if verbose:
+                    print(f"[MAIN] HTML tag is detected. Primary index is '{ind}'")
                 new_ind, js = process_html_tag(file[ind+1:], ind)
                 if js:
                     mode = "js"
@@ -707,6 +716,8 @@ def main(file):
        # === B: Check for Python.
         elif mode == "python":
             if char == "[" and nchar == "/" and not py_comment and not py_string:
+                if verbose:
+                    print(f"[MAIN] Python code is detected. Primary index is '{ind}'")
                 if not py_text.isspace():
                     token.append(Token('MALANGE_ELEMENT_PY',  py_text, py_ind))
                 py_text        = ""
@@ -729,6 +740,8 @@ def main(file):
         # === C: Check for JS.
         elif mode == "js":      
             if char == "<" and nchar == "/" and js_comment == "" and js_string == "":
+                if verbose:
+                    print(f"[MAIN] Javascript code is detected. Primary index is '{ind}'")
                 js_comment = ""
                 if js_text.isspace():
                     js_text = ""
@@ -753,380 +766,60 @@ def main(file):
     elif mode == "python":
         print("[PYTHON] Error at the end of file: [script/] is not closed.")
         exit(1)
+
+# TEST SUITE:
+
+def main():
+    # Process contents.
+    content = "" 
+    # Process arguments.
+    parser = argparse.ArgumentParser(description='Argument for the file.')
+    parser.add_argument("--verbose", action="store_true", help="Make the print verbose or not, can affect speed.")
+    parser.add_argument("file", help="File path of the file that must be provided.")
+    args = parser.parse_args()
+    with open(args.file, 'r') as f:
+        content = f.read()
+        f.close()
+    # Load timing.
+    multiplier = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+    duration = {10 : 0, 20 : 0, 30 : 0, 40 : 0, 50 : 0,
+                60 : 0, 70 : 0, 80 : 0, 90 : 0, 100 : 0}
+    verbose = args.verbose
+    print(f"\nVerbose is set to {verbose}.")
+    # Test.
+    for c in multiplier:
+        prof = cProfile.Profile()
+        prof.enable()
+        print(f"\nTest is enacted with multipiler {c}:\n")
+        run(content * c)
+        print("\nTest is finished.\n")
+        prof.disable()
+        prof.print_stats(sort="tottime")
+        stats = pstats.Stats(prof)
+        duration[c] = stats.total_tt
+        print(f"Duration is {duration[c]} second.")
+    # Calculate regression.
+    print("\nProcessing final result:\n")
+    x = np.array(multiplier)
+    y = np.array([duration[m] for m in multiplier])
+    slope, intercept = np.polyfit(x, y, 1)
+    predicted_y = slope * x + intercept
+    residuals = y - predicted_y
+    ss_res = np.sum(residuals ** 2)
+    ss_tot = np.sum((y - np.mean(y)) ** 2)
+    r_squared = 1 - (ss_res / ss_tot)
+    for m, d in duration.items():
+        print(f"- Multipler {m} : {d} second.")
+    print(f"\nR^2 is {r_squared}\n")
     print("-------------")
-    print("TOKEN RESULT:")
-    for i, t in enumerate(token):
-        print(f"{i} > {t()}")
+    if r_squared >= 0.98:
+        print("\nTime complexity is linear O(n) with requirement of 0.98")
+    else:
+        print("\nTime complexity is not linear O(n), can be anything.")
 
-file = r'''
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Complex HTML Demo</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <!-- ===================== -->
-    <!-- GLOBAL STYLES -->
-    <!-- ===================== -->
-    <style>
-        :root {
-            --bg: #0f1220;
-            --panel: #1a1e3a;
-            --accent: #5ddcff;
-            --accent-2: #c77dff;
-            --text: #e6e6eb;
-            --muted: #9aa0b3;
-            --danger: #ff6b6b;
-            --success: #4ade80;
-            --radius: 12px;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-            background: linear-gradient(135deg, #0f1220, #090b16);
-            color: var(--text);
-            line-height: 1.6;
-        }
-
-        header {
-            padding: 1.5rem 2rem;
-            background: var(--panel);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid rgba(255,255,255,0.08);
-        }
-
-        header h1 {
-            font-size: 1.4rem;
-            letter-spacing: 1px;
-        }
-
-        nav ul {
-            list-style: none;
-            display: flex;
-            gap: 1rem;
-        }
-
-        nav a {
-            text-decoration: none;
-            color: var(--text);
-            padding: 0.4rem 0.7rem;
-            border-radius: 6px;
-        }
-
-        nav a:hover {
-            background: rgba(255,255,255,0.08);
-        }
-
-        main {
-            padding: 2rem;
-            display: grid;
-            grid-template-columns: 3fr 1fr;
-            gap: 2rem;
-        }
-
-        section {
-            background: var(--panel);
-            border-radius: var(--radius);
-            padding: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        section h2 {
-            margin-bottom: 1rem;
-            font-size: 1.2rem;
-        }
-
-        /* ===================== */
-        /* DASHBOARD CARDS */
-        /* ===================== */
-        .cards {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-            gap: 1rem;
-        }
-
-        .card {
-            background: linear-gradient(135deg, var(--accent), var(--accent-2));
-            color: #000;
-            padding: 1rem;
-            border-radius: var(--radius);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.35);
-        }
-
-        .card p {
-            font-size: 0.9rem;
-        }
-
-        /* ===================== */
-        /* TABS */
-        /* ===================== */
-        .tabs {
-            display: flex;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            margin-bottom: 1rem;
-        }
-
-        .tab {
-            padding: 0.5rem 1rem;
-            cursor: pointer;
-            color: var(--muted);
-        }
-
-        .tab.active {
-            color: var(--text);
-            border-bottom: 2px solid var(--accent);
-        }
-
-        .tab-content {
-            display: none;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
-        /* ===================== */
-        /* TABLE */
-        /* ===================== */
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 1rem;
-        }
-
-        th, td {
-            padding: 0.6rem;
-            border-bottom: 1px solid rgba(255,255,255,0.08);
-            text-align: left;
-        }
-
-        th {
-            color: var(--muted);
-            font-weight: 600;
-        }
-
-        /* ===================== */
-        /* FORM */
-        /* ===================== */
-        form {
-            display: grid;
-            gap: 0.8rem;
-        }
-
-        input, textarea, select, button {
-            padding: 0.6rem;
-            border-radius: 6px;
-            border: none;
-            font-size: 0.9rem;
-        }
-
-        input, textarea, select {
-            background: #0c0f1f;
-            color: var(--text);
-        }
-
-        button {
-            background: var(--accent);
-            color: #000;
-            cursor: pointer;
-            font-weight: bold;
-        }
-
-        button.danger {
-            background: var(--danger);
-            color: #000;
-        }
-
-        /* ===================== */
-        /* SIDEBAR */
-        /* ===================== */
-        aside {
-            background: var(--panel);
-            border-radius: var(--radius);
-            padding: 1.5rem;
-            height: fit-content;
-        }
-
-        .log {
-            font-size: 0.85rem;
-            color: var(--muted);
-            max-height: 200px;
-            overflow-y: auto;
-        }
-
-        /* ===================== */
-        /* MODAL */
-        /* ===================== */
-        .modal {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.6);
-            display: none;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .modal.active {
-            display: flex;
-        }
-
-        .modal-box {
-            background: var(--panel);
-            padding: 2rem;
-            border-radius: var(--radius);
-            max-width: 400px;
-            width: 100%;
-        }
-
-        footer {
-            padding: 1rem;
-            text-align: center;
-            color: var(--muted);
-        }
-    </style>
-</head>
-
-<body>
-<header>
-    <h1>System Dashboard</h1>
-    <nav>
-        <ul>
-            <li><a href="#">Home</a></li>
-            <li><a href="#">Metrics</a></li>
-            <li><a href="#">Settings</a></li>
-        </ul>
-    </nav>
-</header>
-
-<main>
-    <div>
-        <section>
-            <h2>Overview</h2>
-            <div class="cards">
-                <div class="card">
-                    <h3>CPU</h3>
-                    <p id="cpu">32%</p>
-                </div>
-                <div class="card">
-                    <h3>Memory</h3>
-                    <p id="memory">5.1 GB</p>
-                </div>
-                <div class="card">
-                    <h3>Network</h3>
-                    <p id="network">1.2 Mbps</p>
-                </div>
-            </div>
-        </section>
-
-        <section>
-            <h2>Details</h2>
-            <div class="tabs">
-                <div class="tab active" data-tab="processes">Processes</div>
-                <div class="tab" data-tab="events">Events</div>
-            </div>
-
-            <div class="tab-content active" id="processes">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>PID</th>
-                            <th>Name</th>
-                            <th>CPU</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr><td>1021</td><td>renderer</td><td>12%</td></tr>
-                        <tr><td>1044</td><td>worker</td><td>7%</td></tr>
-                        <tr><td>1098</td><td>network</td><td>4%</td></tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="tab-content" id="events">
-                <p>No critical events reported.</p>
-            </div>
-        </section>
-
-        <section>
-            <h2>Create Alert</h2>
-            <form id="alertForm">
-                <input type="text" placeholder="Alert name" required>
-                <select>
-                    <option>CPU Usage</option>
-                    <option>Memory Usage</option>
-                    <option>Network Spike</option>
-                </select>
-                <textarea placeholder="Description"></textarea>
-                <button type="submit">Create</button>
-            </form>
-        </section>
-    </div>
-
-    <aside>
-        <h2>Activity Log</h2>
-        <div class="log" id="log">
-            <p>System started.</p>
-        </div>
-        <br>
-        <button class="danger" id="openModal">Shutdown</button>
-    </aside>
-</main>
-
-<footer>
-    © 2025 Complex HTML Demo
-</footer>
-
-<div class="modal" id="modal">
-    <div class="modal-box">
-        <h2>Confirm Action</h2>
-        <p>This will shut down the system.</p>
-        <br>
-        <button id="confirm">Confirm</button>
-        <button class="danger" id="cancel">Cancel</button>
-    </div>
-</div>
-
-<script>
-    // Tabs
-    document.querySelectorAll('.tab').forEach(tab => {
-        tab.addEventListener('click', () => {
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            tab.classList.add('active');
-            document.getElementById(tab.dataset.tab).classList.add('active');
-        });
-    });
-
-    // Form
-    document.getElementById('alertForm').addEventListener('submit', e => {
-        e.preventDefault();
-        const log = document.getElementById('log');
-        log.innerHTML += '<p>New alert created.</p>';
-    });
-
-    // Modal
-    const modal = document.getElementById('modal');
-    document.getElementById('openModal').onclick = () => modal.classList.add('active');
-    document.getElementById('cancel').onclick = () => modal.classList.remove('active');
-    document.getElementById('confirm').onclick = () => {
-        alert('System shutting down...');
-        modal.classList.remove('active');
-    };
-</script>
-</body>
-</html>
-'''
-
-
-main(file)
-stop: float =time.perf_counter()
-print(stop - start)
+if __name__ == "__main__":
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("\n\nKeyboard interrupt is detected, exiting...")
+        exit(0)
