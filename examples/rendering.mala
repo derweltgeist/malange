@@ -1,0 +1,94 @@
+<!-- ------------------------------------ ### INJECTION -->
+
+<!-- To perform rendering, Malange has provided several blocks -->
+
+[script/]
+
+import malange as m
+
+def addr(n):
+    if name == "John Doe":
+        return "Example Street No. 0"
+    else:
+        return "Invalid address"
+
+name     = "John Doe"
+list     = [0, 1, 2, 3, 4, 5]
+variable = "foo"
+money    = 100
+age      = m.react(10)
+
+[/script]
+
+<!-- ------------------------------------ ### INJECTION -->
+
+<!-- The first one is called an injection, which only accepts a single expression. -->
+<p>Hello, my name is ${name}.</p>
+
+<!-- You can call a function rather than executing a variable expression. -->
+<p>My address is ${addr(name)}</p>
+
+<!-- If you seek to utilize anonymous function, you can use a lambda function. -->
+<p>My full name is ${lambda: name + " Wellington"}</p>
+
+<!-- ------------------------------------ ### BLOCKS -->
+
+<!-- # FOR block -->
+
+<!-- This is called a for block, it simply loops a list. -->
+[for item in list/]
+    <p>The item is '${item}'</p>
+[/for]
+
+<!-- # IF block -->
+
+<!-- This is called an if block for conditional rendering. -->
+[if variable == "foo"/]
+    <p>Display ${variable}</p>
+<!-- You can insert elif sub-block -->
+[/elif variable == "bar"/]
+    <p>Apparently, it is now ${variable}</p>
+<!-- And not to forget: else sub-block -->
+[/else/]
+    <p>Well, now it is ${variable}</p>
+[/if]
+<!-- elif and else sub-blocks are optional. You can have many elif, but only one else. -->
+
+<!-- # SWITCH block -->
+
+<!-- An alternative is called switch block, which mirrors Python switch-case. -->
+[switch money/]
+[/case 10/]
+    <p>Your money is worth ${money} dollars.</p>
+[/case 100/]
+    <p>You are very rich.</p>
+[/case _/]
+    <p>Invalid value.</p>
+[/switch]
+
+<!-- ------------------------------------ ### ACTION -->
+
+<!-- Actions are binders that allow you to execute specific utilities. -->
+<!-- It works by tying the component to a Python function that is free to manage the component -->
+<!-- Here are various examples for web development (Svelte-inspired) -->
+
+<input @bind.value(age) placeholder="Please enter your age to confirm:" />
+
+<!-- ------------------------------------ ### ESCAPING -->
+
+<!--
+
+To escape, use this:
+a. Specials
+Action tag:       @ -> \@
+Injection tag:    ${ ... } -> \${ ... \}
+c. Blocks
+Opening tag:      [ ... /] -> \[ ... \/]
+Middle tag:       [/ .. /] -> \[/ .. \/]
+Closing tag:      [/ ... ] -> \[/ ... \]
+d. Elements
+Opening tag:      < .... > -> \< .... \>
+Self-closing tag: < ... /> -> \< ... \/>
+Closing tag:      </ ... > -> \</ ... \>
+
+-->
