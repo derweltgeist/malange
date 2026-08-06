@@ -1,10 +1,10 @@
 [project]
 name = "malange"
-version = "0.1.0"
-description = "Add your description here"
+version = "1.0.0.dev1"
+description = "An extensible, modular, and open-source application framework."
 readme = "README.md"
 authors = [
-    { name = "the world's spirit", email = "anonymous@anonymous.com" }
+    { name = "derweltgeist", email = "anoki.blazed@gmail.com" }
 ]
 requires-python = ">=3.11"
 dependencies = []
@@ -15,3 +15,14 @@ malange = "malange:main"
 [build-system]
 requires = ["uv_build>=0.12.1,<0.13.0"]
 build-backend = "uv_build"
+
+[tool.uv.workspace]
+members = [
+    "packages/malange_core",
+    "packages/malange_web",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]

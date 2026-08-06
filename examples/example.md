@@ -8,13 +8,13 @@ MIT License.
 ## Architecture
 
 At its base, Malange is composed of several components:
-- Core: The core is responsible for processing the template language (```.mala```)
+- Engine: The engine is responsible for processing the template language (```.mala```)
 - Middle: The middle is responsible for processing middlewares.
 - Gateway: The gateway is responsible for yielding whatever app you wish for.
 
 Let's assume a Python frontend web application:
 - The gateway will tell the bindings, DOM APIs, etc.
-- The core will link the utilities of the gateway to be used by you in the template.
+- The engine will link the utilities of the gateway to be used by you in the template.
 - The middle can intercept. But they must "understand" both the gateway and the core.
 
 This means the ecosystem of Malange is open-ended. Thus, boilerplate components are included.
@@ -108,7 +108,7 @@ The syntax is ```@{ ... }```
 
 ```mala
 [script/]
-from malange.api.core import react
+from malange_core.api.engine import react
 from malange_web import bind
 
 name  = "John Doe"
