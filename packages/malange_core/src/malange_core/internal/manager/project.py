@@ -17,7 +17,7 @@ import importlib.util
 from typing import Union
 from importlib.machinery import ModuleSpec
 
-from malange_core.api.log import Logger
+from malange_core.api.log import MalangeLogger
 from malange_core.internal.engine import MalangeEngine
 from malange_core.internal.manager.config import (MalangePluginType,
                                                   MalangeModeType, MalangePluginConfigNull)
@@ -25,9 +25,9 @@ from malange_core.internal.manager import MalangeManagerLogger
 
 class MalangeProject:
     def __call__(self, conf: types.ModuleType, pwd: str):
-        self.__conf   : types.ModuleType = conf     # Save the configuration module.
-        self.__pwd    : str              = pwd      # Working directory.
-        self.__log    : Logger           = Logger() # Register log for Malange Core first.
+        self.__conf   : types.ModuleType = conf            # Save the configuration module.
+        self.__pwd    : str              = pwd             # Working directory.
+        self.__log    : MalangeLogger    = MalangeLogger() # Register log for Malange Core first.
         # Register components.
         log = self.__mode_register() # Register mode (debug / verbose / normal)
         self.__plug_register()       # Register plugins.

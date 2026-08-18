@@ -25,10 +25,7 @@ import logging
 
 from typing import Literal, Optional, TYPE_CHECKING
 
-if TYPE_CHECKING: # To prevent circular imports, only import for type checking.
-    from malange_core.internal.manager.project import MalangeProject
-
-class Logger:
+class MalangeLogger:
     '''Logging API for Malange.'''
 
     # BOOTSTRAP SYSTEM
@@ -37,7 +34,7 @@ class Logger:
     PLUGINS : dict[str, bool]          = {}     # Check if plugin logger has been initialized or not.
     def __init__(self, name: str = ""):
         '''Set up locking phase and system of logger registration.'''
-        if Logger.LOCK: # During locking, that means Logger is still in the configuration phase.
+        if MalangeLogger.LOCK: # During locking, that means Logger is still in the configuration phase.
             logging.basicConfig(
                 level=logging.WARNING,
                 format="%(asctime)s [%(levelname)s] %(message)s"
@@ -48,13 +45,13 @@ class Logger:
                 self.error("The only component allowed during logging LOCK is MGR.")
         else: # But if locking is no longer enabled, anything can run.
             if name == "": # If no name is provided, auto-assume malange project.
-                if Logger.PROJ:
+                if MalangeLogger.PROJ:
                     self.critical("Project logger has been initialized.")
                 self.name = "malange_proj"
-                Logger.PROJ = True # You can't initialize again.
+                MalangeLogger.PROJ = True # You can't initialize again.
             else: # If name is provided, auto-assume malange plugin.
-                if name in Logger.PLUGINS: # Check if the plugin is installed.
-                    if not Logger.PLUGINS[name]: # Check if the plugin has been initialized.
+                if name in MalangeLogger.PLUGINS: # Check if the plugin is installed.
+                    if not MalangeLogger.PLUGINS[name]: # Check if the plugin has been initialized.
                         self.name = name
                     else:
                         self.critical(f"Plugin logger by the name of {name} has been initialized.")
@@ -63,18 +60,18 @@ class Logger:
     f"Plugin logger by the name of {name} does not exist in the PLUGINS project config entity.") 
     def conf(self, log: Literal[10, 20, 30, 40, 50]) -> None:
         '''Configure the logger to exit locking phase with proper configuration.'''
-        if Logger.LOCK: # If LOCK is True, set up basicConfig again
+        if MalangeLogger.LOCK: # If LOCK is True, set up basicConfig again
             logging.basicConfig(
                 level=log,
                 format="%(asctime)s [%(levelname)s] %(message)s"
             )
-            Logger.LOCK = False
+            MalangeLogger.LOCK = False
         else:
             self.error("self.conf of Logger can only be run during locking phase.")
     def plugin(self, name: list[str]):
         '''Configure the logger list of plugins.'''
-        if Logger.LOCK:
-            Logger.PLUGINS = dict.fromkeys(name, False)
+        if MalangeLogger.LOCK:
+            MalangeLogger.PLUGINS = dict.fromkeys(name, False)
         else:
             self.error("self.plugin of Logger can only be run during locking phase.")
 

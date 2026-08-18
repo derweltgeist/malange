@@ -10,6 +10,6 @@ configurations.
 
 from typing import Optional
 
-from malange_core.api.log import Logger
+from malange_core.api.log import MalangeLogger
 
-MalangeManagerLogger: Optional[Logger] = None
+MalangeManagerLogger: Optional[MalangeLogger] = None
