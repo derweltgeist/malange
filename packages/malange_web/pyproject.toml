@@ -7,7 +7,7 @@ authors = [
     { name = "derweltgeist", email = "anoki.blazed@gmail.com" }
 ]
 requires-python = ">=3.11"
-dependencies = ["malange_core"]
+dependencies = ["malange-core"]
 
 [build-system]
 requires = ["uv_build>=0.12.1,<0.13.0"]

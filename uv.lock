@@ -31,6 +31,10 @@ wheels = [
 name = "malange"
 version = "1.0.0.dev1"
 source = { editable = "." }
+dependencies = [
+    { name = "malange-core" },
+    { name = "malange-web" },
+]
 
 [package.dev-dependencies]
 dev = [
@@ -38,6 +42,10 @@ dev = [
 ]
 
 [package.metadata]
+requires-dist = [
+    { name = "malange-core", editable = "packages/malange_core" },
+    { name = "malange-web", editable = "packages/malange_web" },
+]
 
 [package.metadata.requires-dev]
 dev = [{ name = "pytest", specifier = ">=9.1.1" }]

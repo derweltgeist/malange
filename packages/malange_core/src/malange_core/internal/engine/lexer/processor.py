@@ -1,7 +1,7 @@
 '''
     malange_core.internal.engine.lexer.processor
 
-    Serving the base template of a LexerProcessor, which serves
+    Serving as the base template of a LexerProcessor, which serves
     as a base template class for generating lexemes from file stream.
     - Token  : Lexical unit of analysis.
     - Unit   : Divisions of a token.
@@ -10,7 +10,8 @@
 
 import re
 from enum import Enum
-from abc import abstractmethod
+
+from malange_core.types import EmptyEnum
 
 NO_CONTEXT = object() # Placeholder for no no context.
 
@@ -28,7 +29,7 @@ def valid_unit_token(string: str) -> bool:
 
 class LexerHeader:
     '''Header for reading the file.'''
-    def __init__(self, file: str):
+    def __init__(self, file: str, name: str, dir: str):
         '''
             Initialize the header, there should be one instance per file.
 
@@ -36,6 +37,8 @@ class LexerHeader:
         '''
         self.__file: str = file
         self.__ind:  str = 0
+        self.name:   str = name
+        self.dir:    str = dir
     def __call__(self) -> str:
         '''Return the current char.'''
         return self.__file[self.__ind]
@@ -88,8 +91,24 @@ class LexerUnit:
 
 class LexerProcessor:
     '''Class for lexer processer, acting as the base template.'''
-    def __init__(self, units: dict[str, str], tokens: dict[str, list[str]],
-                 context: dict[str, list[any]], mode):
+    def __init__(self, header: LexerHeader, metadata: dict[str, str], mode):
+        self.UNITS   : type[Enum]
+        self.TOKENS  : type[Enum]
+        self.CONTEXT : dict[type[Enum], list]
+        units        : dict[str, str]
+        tokens       : dict[str, list[str]]
+        context      : dict[str, list[str]]
+
+        self.UNITS   = EmptyEnum  # This will store enums of the units.
+        self.TOKENS  = EmptyEnum  # This will store enums of the tokens.
+        self.CONTEXT = {}         # This won't store an enum, just a map.
+
+        self.__header : LexerHeader    = header
+        self.__meta   : dict[str, str] = metadata
+        self.__mode                    = mode
+
+        units, tokens, context = self.prepare()
+
         '''
             Preparing the processor by loading the valid units, tokens, and context.
             Context indicates what modes the header must be in to detect the token.
@@ -105,10 +124,7 @@ class LexerProcessor:
                 context dict[str, list[any]] : The key is the token name, the list is the CONTEXT above.
                 mode                         : The list of modes.
         '''
-        self.LOCK    = False # Locking system to prevent errors.
-        self.UNITS   = None  # This will store enums of the units.
-        self.TOKENS  = None  # This will store enums of the tokens.
-        self.CONTEXT = {}    # This won't store an enum, just a map.
+        
 
         # Check if the units, tokens, and context are valid.
         if units == {} or tokens == {} or context == {}:
@@ -176,21 +192,8 @@ class LexerProcessor:
                     self.CONTEXT[actual_token] = (entry_mode, exit_mode, cont[2])
                 else:
                     exit(1) # ERROR: Invalid context function, it should be a callable or a NO_CONTEXT.
-                
-        # Enable the lock, indicating we are done.
-        if self.LOCK == False:
-            self.LOCK = True
-        else:
-            exit(1) # ERROR: LexerProcessor.LOCK is tempered before LexerProcessor is initialized.
 
-    @abstractmethod
-    def process(self, name: str, folder: str, header: LexerHeader):
-        '''
-            Used as the main logic that the child class must define, this will be executed
-            everytime there is a file.
-
-            parameters:
-                name   str : The name of the file.
-                folder str :
-        '''
-        pass
+    def prepare(self):
+        exit(1) # ERROR: prepare() must be defined by any subclasses of LexerProcessor.
+    def process(self):
+        exit(1) # ERROR: process() must be defined by any subclasses of LexerProcessor.

@@ -7,7 +7,10 @@ authors = [
     { name = "derweltgeist", email = "anoki.blazed@gmail.com" }
 ]
 requires-python = ">=3.11"
-dependencies = []
+dependencies = [
+    "malange-core",
+    "malange-web"
+]
 
 [project.scripts]
 malange = "malange:main"
@@ -21,6 +24,10 @@ members = [
     "packages/malange_core",
     "packages/malange_web",
 ]
+
+[tool.uv.sources]
+malange-core = { workspace = true }
+malange-web  = { workspace = true }
 
 [dependency-groups]
 dev = [

@@ -1,3 +1,10 @@
+'''
+    malange_core.internal.engine.lexer.mode
+
+    Storing the default modes (DefaultModes) and LexerMode
+    to manage these modes. 
+'''
+
 from enum import Enum, auto
 
 class DefaultModes(Enum):
